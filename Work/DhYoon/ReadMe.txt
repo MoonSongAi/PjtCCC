@@ -16,3 +16,5 @@ conda activate langchain_st
 ## 0.2.0 버전에서 제거될 예정임을 알립
 >>> pip install -U langchain-openai
 # from langchain_openai import ChatOpenAI
+
+>>>pip install streamlit-drawable-canvas

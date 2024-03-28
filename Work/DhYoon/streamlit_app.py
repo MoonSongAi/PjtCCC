@@ -6,6 +6,8 @@ from langchain.memory import StreamlitChatMessageHistory
 
 from langchain_integration import setup_langchain
 from analysis_image import analysis_image_process
+from PIL import Image
+from streamlit_drawable_canvas import st_canvas
 
 def main():
     st.set_page_config(
@@ -54,7 +56,27 @@ def main():
             button_enabled = uploaded_files is not None and len(uploaded_files) > 0
             process_lang = st.button("Process....", disabled=not button_enabled)
     if process_image:
-        analysis_image_process(st,tab3,uploaded_Image)
+        # analysis_image_process(st,tab3,uploaded_Image)
+        stroke_width = 5
+        stroke_color = "#ff0000"  # 붉은색
+        # img = uploaded_Image
+        canvas_result = st_canvas(
+                    fill_color="rgba(255, 165, 0, 0.3)",  # 필러 색상, 여기서는 사용하지 않음
+                    stroke_width=stroke_width,
+                    stroke_color=stroke_color,
+                    background_image= Image.open(uploaded_Image) if uploaded_Image else None,
+                    update_streamlit=True,
+                    # width=image.width,
+                    # height=image.height,
+                    width=300,
+                    height=200,
+                    drawing_mode="rect",
+                    display_toolbar=True,
+                    key="full_app"
+                )
+
+        if canvas_result.image_data is not None:
+            st.image(canvas_result.image_data, caption=img.name)
 
     if process_lang:
         if not openai_api_key:

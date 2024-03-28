@@ -29,3 +29,5 @@ tqdm==4.66.2
 typing_extensions==4.10.0
 urllib3==2.2.1
 wheel==0.41.2
+streamlit-drawable-canvas
+loguru
