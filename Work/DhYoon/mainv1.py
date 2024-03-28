@@ -38,26 +38,27 @@ def main():
         st.session_state.processComplete = None
 
     with st.sidebar:
-        with st.expander("참조할 지시정보",expanded=True):            
+        with st.expander("Select Image",expanded=True):            
+            uploaded_Image =  st.file_uploader("Select target Image",type=['png','jpg'],accept_multiple_files=True)
+
+        with st.expander("Setting for LLM",expanded=False):            
             uploaded_files =  st.file_uploader("Upload your file",type=['pdf','docx'],accept_multiple_files=True)
-        with st.sidebar.expander("API Key",expanded=False):            
             # Streamlit 사이드바에 슬라이더 추가
             openai_api_key = st.text_input("OpenAI API Key", key="chatbot_api_key", type="password")
-        with st.sidebar.expander("Chunk ....",expanded=False):            
             chunk_size = st.slider("Chunk Size", min_value=100, max_value=2000, value=900, step=50)
             chunk_overlap = st.slider("Chunk Overlap", min_value=50, max_value=500, value=100, step=10)
-        # Streamlit 사이드바 콤보박스 추가
-        device_option = st.sidebar.selectbox(
-            "Choose the device for the model",
-            options=['cpu', 'cuda', 'cuda:0', 'cuda:1'],  # 여기에 필요한 모든 옵션을 추가하세요.
-            index=0  # 'cpu'를 기본값으로 설정
-        )
-        # Streamlit 사이드바  콤보박스 추가
-        model_name = st.sidebar.selectbox(
-            "Choose the model for OpenAI LLM API",
-            options=['gpt-3.5-turbo', 'gpt-3', 'gpt-4','davinci-codex', 'curie'],  # 사용 가능한 모델 이름들
-            index=0  # 'gpt-3.5-turbo'를 기본값으로 설정
-        )
+            # Streamlit 사이드바 콤보박스 추가
+            device_option = st.selectbox(
+                "Choose the device for the model",
+                options=['cpu', 'cuda', 'cuda:0', 'cuda:1'],  # 여기에 필요한 모든 옵션을 추가하세요.
+                index=0  # 'cpu'를 기본값으로 설정
+            )
+            # Streamlit 사이드바  콤보박스 추가
+            model_name = st.selectbox(
+                "Choose the model for OpenAI LLM API",
+                options=['gpt-3.5-turbo', 'gpt-3', 'gpt-4','davinci-codex', 'curie'],  # 사용 가능한 모델 이름들
+                index=0  # 'gpt-3.5-turbo'를 기본값으로 설정
+            )
         # 파일이 업로드 되었는지 확인하고 버튼의 활성화 상태 결정
         button_enabled = uploaded_files is not None and len(uploaded_files) > 0
         process = st.button("Process....", disabled=not button_enabled)
