@@ -17,4 +17,7 @@ conda activate langchain_st
 >>> pip install -U langchain-openai
 # from langchain_openai import ChatOpenAI
 
->>>pip install streamlit-drawable-canvas
+# >>>pip install streamlit-drawable-canvas
+>>>pip install streamlit-cropper
+#>>>pip install pdf2image
+>>>pip install PyMuPDF

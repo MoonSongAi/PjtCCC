@@ -5,16 +5,24 @@ from langchain_community.callbacks import get_openai_callback
 from langchain.memory import StreamlitChatMessageHistory
 
 from langchain_integration import setup_langchain
-from analysis_image import analysis_image_process
+from analysis_image import save_image_to_folder
+
+from streamlit_cropper import st_cropper
 from PIL import Image
-from streamlit_drawable_canvas import st_canvas
+
+import fitz #PyNuPDF
+import os
+import io
 
 def main():
     st.set_page_config(
-        page_title="무었이든",
+        page_title="표시 디자인",
         page_icon=":volcano:")
 
-    st.title("_무었이 불편 하실까? :red[QA Chat]_ :volcano:")
+
+    st.title("_표시 디자인 오류....?_ :red[QA Chat]_ :volcano:")
+
+    tab1 , tab2 ,tab3 = st.tabs(["💫Image processing....","🧑‍🚀chat.....","🕵️‍♂️ chucked Data"])
 
     if "conversation" not in st.session_state:
         st.session_state.conversation = None
@@ -24,14 +32,16 @@ def main():
 
     if "processComplete" not in st.session_state:
         st.session_state.processComplete = None
-
-    tab1 , tab2 ,tab3 = st.tabs(["🧑‍🚀chat.....","🕵️‍♂️ chucked Data","💫Image processing...."])
+    # 1단계: 초기 상태 설정
+    if 'canvas_image_data' not in st.session_state:
+        st.session_state.canvas_image_data = None
+    
 
     with st.sidebar:
         with st.expander("Select Image",expanded=True):            
-            uploaded_Image =  st.file_uploader("Select target Image",type=['png','jpg'],accept_multiple_files=True)
+            uploaded_Image =  st.file_uploader("Select target Image",type=['pdf','png','jpg'])
             # 파일이 업로드 되었는지 확인하고 버튼의 활성화 상태 결정
-            button_enabled = uploaded_Image is not None and len(uploaded_Image) > 0
+            button_enabled = uploaded_Image is not None 
             process_image = st.button("Analysis Design file....", disabled=not button_enabled)
 
         with st.expander("Setting for LangChain",expanded=False):            
@@ -55,28 +65,35 @@ def main():
             # 파일이 업로드 되었는지 확인하고 버튼의 활성화 상태 결정
             button_enabled = uploaded_files is not None and len(uploaded_files) > 0
             process_lang = st.button("Process....", disabled=not button_enabled)
-    if process_image:
+    if uploaded_Image:
         # analysis_image_process(st,tab3,uploaded_Image)
-        stroke_width = 5
-        stroke_color = "#ff0000"  # 붉은색
-        # img = uploaded_Image
-        canvas_result = st_canvas(
-                    fill_color="rgba(255, 165, 0, 0.3)",  # 필러 색상, 여기서는 사용하지 않음
-                    stroke_width=stroke_width,
-                    stroke_color=stroke_color,
-                    background_image= Image.open(uploaded_Image) if uploaded_Image else None,
-                    update_streamlit=True,
-                    # width=image.width,
-                    # height=image.height,
-                    width=300,
-                    height=200,
-                    drawing_mode="rect",
-                    display_toolbar=True,
-                    key="full_app"
-                )
+        with tab1:
+            if uploaded_Image.type == 'application/pdf':
+                UPLOAD_DIRECTORY = ".\Images"
 
-        if canvas_result.image_data is not None:
-            st.image(canvas_result.image_data, caption=img.name)
+                file_path = os.path.join(UPLOAD_DIRECTORY, uploaded_Image.name)
+                pdf_file = fitz.open(file_path)
+                page = pdf_file.load_page(0)
+                pix = page.get_pixmap()
+                img_bytes  = pix.tobytes("ppm") # 이미지 데이터를 PPM 형식으로 변환
+                # PPM 데이터를 PIL 이미지로 변환
+                img = Image.open(io.BytesIO(img_bytes))
+                # print(file_path)
+            else:
+                img = Image.open(uploaded_Image)
+
+            cropped_img = st_cropper(img, realtime_update=True, box_color='#0000FF',
+                                                    aspect_ratio=(1,1))
+                        
+            # Manipulate cropped image at will
+            st.session_state.canvas_image_data = cropped_img
+            # _ = cropped_img.thumbnail((300,300))
+            save_image = st.button("Save cropped image")
+
+            st.write("Cropped Image Preview")
+            st.image(cropped_img)
+            if save_image:
+                save_image_to_folder(cropped_img)
 
     if process_lang:
         if not openai_api_key:
@@ -85,7 +102,7 @@ def main():
                 st.info("Please add your OpenAI API key to continue.")
                 st.stop()
         # Langchain 설정
-        conversation_chain = setup_langchain(st , tab2, 
+        conversation_chain = setup_langchain(st , tab3, 
                                             uploaded_files,
                                             chunk_size,chunk_overlap,device_option,
                                             openai_api_key,model_name)
@@ -99,20 +116,20 @@ def main():
                                         "content": "안녕하세요! 주어진 문서에 대해 궁금하신 것이 있으면 언제든 물어봐주세요!"}]
 
     for message in st.session_state.messages:
-        with tab1.chat_message(message["role"]):
-            tab1.markdown(message["content"])
+        with tab2.chat_message(message["role"]):
+            tab2.markdown(message["content"])
 
     history = StreamlitChatMessageHistory(key="chat_messages")
 
     # Chat logic
-    query = tab1.chat_input("질문을 입력해주세요.")
+    query = tab2.chat_input("질문을 입력해주세요.")
     if query:
         st.session_state.messages.append({"role": "user", "content": query})
 
-        with tab1.chat_message("user"):
-            tab1.markdown(query)
+        with tab2.chat_message("user"):
+            tab2.markdown(query)
 
-        with tab1.chat_message("assistant"):
+        with tab2.chat_message("assistant"):
             chain = st.session_state.conversation
 
             with st.spinner("Thinking..."):
@@ -122,11 +139,11 @@ def main():
                 response = result['answer']
                 source_documents = result['source_documents']
 
-                tab1.markdown(response)
-                with tab1.expander("참고 문서 확인"):
-                    tab1.markdown(source_documents[0].metadata['source'], help = source_documents[0].page_content)
-                    tab1.markdown(source_documents[1].metadata['source'], help = source_documents[1].page_content)
-                    tab1.markdown(source_documents[2].metadata['source'], help = source_documents[2].page_content)
+                tab2.markdown(response)
+                with tab2.expander("참고 문서 확인"):
+                    tab2.markdown(source_documents[0].metadata['source'], help = source_documents[0].page_content)
+                    tab2.markdown(source_documents[1].metadata['source'], help = source_documents[1].page_content)
+                    tab2.markdown(source_documents[2].metadata['source'], help = source_documents[2].page_content)
 
 
 if __name__ == '__main__':
