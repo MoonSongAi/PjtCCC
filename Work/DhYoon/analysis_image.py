@@ -1,32 +1,40 @@
 # analysis_image
 # import matplotlib.pyplot as plt
+from streamlit_cropper import st_cropper
 from PIL import Image
-from streamlit_drawable_canvas import st_canvas
+
+import os
+import uuid
+
+def save_image_to_folder(img, folder_path='C:\\PjtCCC\\CroppedImage'):
+    # 폴더가 존재하지 않는 경우 생성
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+    
+    # 유니크한 파일 이름 생성 (예: 5f47b3f2-4a89-4d9c-8277-25f5b5a9f1b7.png)
+    unique_filename = str(uuid.uuid4()) + '.jpg' 
+    # 이미지 저장 경로
+    file_path = os.path.join(folder_path, unique_filename)
+    # 이미지 저장
+    img.save(file_path)
+    print(f"Image saved to {file_path}")
+    return file_path
+
+# 예시 사용법
+# img = PIL.Image.open('path_to_your_image.png')
+# save_image_to_folder(img)
 
 def analysis_image_process(st,tab,uploaded_Image):
     # Canvas 설정
     stroke_width = 5
     stroke_color = "#ff0000"  # 붉은색
-
-    for img in uploaded_Image:
-        # image = Image.open(img)
-        canvas_result = st_canvas(
-                    fill_color="rgba(255, 165, 0, 0.3)",  # 필러 색상, 여기서는 사용하지 않음
-                    stroke_width=stroke_width,
-                    stroke_color=stroke_color,
-                    background_image= Image.open(img) if img else None,
-                    update_streamlit=True,
-                    # width=image.width,
-                    # height=image.height,
-                    width=300,
-                    height=200,
-                    drawing_mode="rect",
-                    display_toolbar=True,
-                    key="full_app"
-                )
-
-#    with tab:
-    # if canvas_result.image_data is not None:
-    #     tab.st.image(canvas_result.image_data, caption=img.name)
-        
+    with tab:
+        img = Image.open(uploaded_Image)
+        cropped_img = st_cropper(img, realtime_update=True, box_color='#0000FF',
+                                            aspect_ratio=(2,3))
+                
+                # Manipulate cropped image at will
+        st.write("Preview")
+            # _ = cropped_img.thumbnail((150,150))
+        st.image(cropped_img)
 
