@@ -35,6 +35,9 @@ def main():
     # 1단계: 초기 상태 설정
     if 'canvas_image_data' not in st.session_state:
         st.session_state.canvas_image_data = None
+    # 회전된 이미지를 저장할 session_state 초기화
+    if 'rotation_angle' not in st.session_state:
+        st.session_state.rotation_angle = 0
     
 
     with st.sidebar:
@@ -73,8 +76,11 @@ def main():
 
                 file_path = os.path.join(UPLOAD_DIRECTORY, uploaded_Image.name)
                 pdf_file = fitz.open(file_path)
-                page = pdf_file.load_page(0)
-                pix = page.get_pixmap()
+                page = pdf_file.load_page(0)   #pdf page가 한페이지 인경우
+                # 이미지의 해상도를 높이기 위한 matrix 설정
+                matrix = fitz.Matrix(4, 4)  # 4배 확대
+                pix = page.get_pixmap(matrix=matrix)  # matrix 매개변수 사용
+                # pix = page.get_pixmap()
                 img_bytes  = pix.tobytes("ppm") # 이미지 데이터를 PPM 형식으로 변환
                 # PPM 데이터를 PIL 이미지로 변환
                 img = Image.open(io.BytesIO(img_bytes))
@@ -88,12 +94,30 @@ def main():
             # Manipulate cropped image at will
             st.session_state.canvas_image_data = cropped_img
             # _ = cropped_img.thumbnail((300,300))
-            save_image = st.button("Save cropped image")
+
+
+            # 버튼 배치를 위한 컬럼 생성
+            col1, col2 = st.columns(2)
+            with col1:
+                # 이미지 저장 버튼
+                save_image = st.button("Save cropped image")
+            with col2:
+                # 이미지 회전 버튼
+                rotate_image = st.button("Rotate")
+            if rotate_image:
+                st.session_state.rotation_angle += 90   # 회전 각도 업데이트
+                st.session_state.rotation_angle %= 360  # 360도가 되면 0으로 리셋
+                # 현재 회전 각도에 따라 이미지 회전
+            
+            st.session_state.canvas_image_data = st.session_state.canvas_image_data.rotate(
+                                                              st.session_state.rotation_angle,
+                                                              expand = True)
 
             st.write("Cropped Image Preview")
-            st.image(cropped_img)
+            st.image(st.session_state.canvas_image_data)
             if save_image:
-                save_image_to_folder(cropped_img)
+                save_image_to_folder(st.session_state.canvas_image_data)
+                st.session_state.rotation_angle = 0
 
     if process_lang:
         if not openai_api_key:
