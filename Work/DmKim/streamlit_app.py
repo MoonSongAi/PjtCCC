@@ -5,14 +5,14 @@ from langchain_community.callbacks import get_openai_callback
 from langchain.memory import StreamlitChatMessageHistory
 
 from langchain_integration import setup_langchain
-from analysis_image import save_image_to_folder ,load_to_image
+from analysis_image import save_image_to_folder
 
 from streamlit_cropper import st_cropper
 from PIL import Image
 
-
+import fitz #PyNuPDF
 import os
-
+import io
 
 def main():
     st.set_page_config(
@@ -35,15 +35,6 @@ def main():
     # 1단계: 초기 상태 설정
     if 'canvas_image_data' not in st.session_state:
         st.session_state.canvas_image_data = None
-    # 회전된 이미지를 저장할 session_state 초기화
-    if 'rotation_angle' not in st.session_state:
-        st.session_state.rotation_angle = 0
-    if 'saved_images' not in st.session_state:
-        st.session_state.saved_images = []
-    if 'images_list' not in st.session_state:
-        st.session_state.images_list = []
-    if 'loaded_image' not in st.session_state:
-        st.session_state.loaded_image = None
     
 
     with st.sidebar:
@@ -75,13 +66,21 @@ def main():
             button_enabled = uploaded_files is not None and len(uploaded_files) > 0
             process_lang = st.button("Process....", disabled=not button_enabled)
     if uploaded_Image:
-        if st.session_state.loaded_image != uploaded_Image:    #image가 변경되었다면
-            st.session_state.loaded_image = uploaded_Image
-            st.session_state.saved_images = []
-            st.session_state.images_list = []
+        # analysis_image_process(st,tab3,uploaded_Image)
         with tab1:
-            
-            img = load_to_image(uploaded_Image)
+            if uploaded_Image.type == 'application/pdf':
+                UPLOAD_DIRECTORY = ".\Images"
+
+                file_path = os.path.join(UPLOAD_DIRECTORY, uploaded_Image.name)
+                pdf_file = fitz.open(file_path)
+                page = pdf_file.load_page(0)
+                pix = page.get_pixmap()
+                img_bytes  = pix.tobytes("ppm") # 이미지 데이터를 PPM 형식으로 변환
+                # PPM 데이터를 PIL 이미지로 변환
+                img = Image.open(io.BytesIO(img_bytes))
+                # print(file_path)
+            else:
+                img = Image.open(uploaded_Image)
 
             cropped_img = st_cropper(img, realtime_update=True, box_color='#0000FF',
                                                     aspect_ratio=(1,1))
@@ -89,43 +88,12 @@ def main():
             # Manipulate cropped image at will
             st.session_state.canvas_image_data = cropped_img
             # _ = cropped_img.thumbnail((300,300))
-
-
-            # 버튼 배치를 위한 컬럼 생성
-            col1, col2 = st.columns(2)
-            with col1:
-                # 이미지 저장 버튼
-                save_image = st.button("Save cropped image")
-            with col2:
-                # 이미지 회전 버튼
-                rotate_image = st.button("Rotate")
-            if rotate_image:
-                st.session_state.rotation_angle += 90   # 회전 각도 업데이트
-                st.session_state.rotation_angle %= 360  # 360도가 되면 0으로 리셋
-                # 현재 회전 각도에 따라 이미지 회전
-            
-            st.session_state.canvas_image_data = st.session_state.canvas_image_data.rotate(
-                                                              st.session_state.rotation_angle,
-                                                              expand = True)
+            save_image = st.button("Save cropped image")
 
             st.write("Cropped Image Preview")
-            st.image(st.session_state.canvas_image_data)
+            st.image(cropped_img)
             if save_image:
-                save_name = save_image_to_folder(st.session_state.canvas_image_data)
-                # 저장된 이미지 리스트에 이미지 추가
-                st.session_state.saved_images.append(st.session_state.canvas_image_data)
-                st.session_state.images_list.append(save_name)
-                st.session_state.rotation_angle = 0
-            # 저장된 이미지 썸네일을 횡으로 나열하여 표시
-            if st.session_state.saved_images:
-                # 각 이미지를 작은 썸네일로 변환하여 표시
-                cols = st.columns(len(st.session_state.saved_images))
-                for idx, saved_image in enumerate(st.session_state.saved_images):
-                    with cols[idx]:
-                        # 썸네일 크기로 이미지 리사이즈
-                        st.caption(st.session_state.images_list[idx])
-                        saved_image.thumbnail((200, 200))
-                        st.image(saved_image, width=100)  # 썸네일 이미지 표시
+                save_image_to_folder(cropped_img)
 
     if process_lang:
         if not openai_api_key:

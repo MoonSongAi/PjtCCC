@@ -3,29 +3,8 @@
 from streamlit_cropper import st_cropper
 from PIL import Image
 
-import fitz #PyNuPDF
 import os
-import io
 import uuid
-def load_to_image(uploaded_Image):
-    if uploaded_Image.type == 'application/pdf':
-        UPLOAD_DIRECTORY = ".\Images"
-
-        file_path = os.path.join(UPLOAD_DIRECTORY, uploaded_Image.name)
-        pdf_file = fitz.open(file_path)
-        page = pdf_file.load_page(0)   #pdf page가 한페이지 인경우
-        # 이미지의 해상도를 높이기 위한 matrix 설정
-        matrix = fitz.Matrix(4, 4)  # 4배 확대
-        pix = page.get_pixmap(matrix=matrix)  # matrix 매개변수 사용
-        # pix = page.get_pixmap()
-        img_bytes  = pix.tobytes("ppm") # 이미지 데이터를 PPM 형식으로 변환
-        # PPM 데이터를 PIL 이미지로 변환
-        img = Image.open(io.BytesIO(img_bytes))
-        # print(file_path)
-    else:
-        img = Image.open(uploaded_Image)
-
-    return img
 
 def save_image_to_folder(img, folder_path='C:\\PjtCCC\\CroppedImage'):
     # 폴더가 존재하지 않는 경우 생성
