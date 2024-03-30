@@ -20,9 +20,29 @@ def main():
         page_icon=":volcano:")
 
 
-    st.title("_표시 디자인 오류....?_ :red[QA Chat]_ :volcano:")
+    st.title("_표시 디자인 오류 탐색기..._ :red[QA Chat]_ :volcano:")
+    # 여기에 CSS 스타일을 추가
+    st.markdown("""
+        <style>
+        /* 여기에 CSS 스타일을 추가 */
+        #tabs-bui3-tab-0>.st-emotion-cache-l9bjmx p,
+        #tabs-bui3-tab-1>.st-emotion-cache-l9bjmx p,
+        #tabs-bui3-tab-2>.st-emotion-cache-l9bjmx p{
+            /* 탭 아이템 스타일 변경 */
+            font-size:25px
+        }
+        .element-container iframe{
+                border:3px dashed black
+        }
+            
+        .st-emotion-cache-1kyxreq div{
+                border:3px dashed red
+        } 
+        </style>
+    """, unsafe_allow_html=True)
+    
 
-    tab1 , tab2 ,tab3 = st.tabs(["💫Image processing....","🧑‍🚀chat.....","🕵️‍♂️ chucked Data"])
+    tab1 , tab2 ,tab3 = st.tabs(["💫Image processing....","🧑‍🚀chat about Design....","🕵️‍♂️ chucked Data"])
 
     if "conversation" not in st.session_state:
         st.session_state.conversation = None
@@ -50,8 +70,17 @@ def main():
         with st.expander("Select Image",expanded=True):            
             uploaded_Image =  st.file_uploader("Select target Image",type=['pdf','png','jpg'])
             # 파일이 업로드 되었는지 확인하고 버튼의 활성화 상태 결정
+                # pDF image 해상
+            pdf_value = st.slider(
+                    label='PDF Resolution',  # 슬라이더 라벨
+                    min_value=1,  # 최소값
+                    max_value=10,  # 최대값
+                    value=2,  # 기본값
+                    step=1  # 단계
+            )
             button_enabled = uploaded_Image is not None 
             process_image = st.button("Analysis Design file....", disabled=not button_enabled)
+
 
         with st.expander("Setting for LangChain",expanded=False):            
             uploaded_files =  st.file_uploader("Upload your file",type=['pdf','docx'],accept_multiple_files=True)
@@ -80,25 +109,23 @@ def main():
             st.session_state.saved_images = []
             st.session_state.images_list = []
         with tab1:
-            
-            img = load_to_image(uploaded_Image)
-
-            cropped_img = st_cropper(img, realtime_update=True, box_color='#0000FF',
+            img = load_to_image(uploaded_Image,pdf_value)
+            cropped_img = st_cropper(img, realtime_update=True, box_color='#FF0000',
                                                     aspect_ratio=(1,1))
                         
             # Manipulate cropped image at will
             st.session_state.canvas_image_data = cropped_img
             # _ = cropped_img.thumbnail((300,300))
 
-
             # 버튼 배치를 위한 컬럼 생성
-            col1, col2 = st.columns(2)
+            col1, col2  = st.columns(2)
             with col1:
                 # 이미지 저장 버튼
                 save_image = st.button("Save cropped image")
             with col2:
                 # 이미지 회전 버튼
-                rotate_image = st.button("Rotate")
+                rotate_image = st.button("Rotate cropped image")
+
             if rotate_image:
                 st.session_state.rotation_angle += 90   # 회전 각도 업데이트
                 st.session_state.rotation_angle %= 360  # 360도가 되면 0으로 리셋
@@ -108,7 +135,7 @@ def main():
                                                               st.session_state.rotation_angle,
                                                               expand = True)
 
-            st.write("Cropped Image Preview")
+            st.write("***_:blue[Preview Cropped Image]_***")
             st.image(st.session_state.canvas_image_data)
             if save_image:
                 save_name = save_image_to_folder(st.session_state.canvas_image_data)
@@ -163,6 +190,9 @@ def main():
 
         with tab2.chat_message("assistant"):
             chain = st.session_state.conversation
+            if chain is None:
+                st.warning('학습된 정보가 없습니다.')
+                st.stop()
 
             with st.spinner("Thinking..."):
                 result = chain({"question": query})
