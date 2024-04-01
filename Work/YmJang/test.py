@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+from streamlit_cropper import st_cropper
 
 # 마우스 콜백 함수
 def mouse_callback(event, x, y, flags, param):
@@ -32,8 +33,11 @@ def mouse_callback(event, x, y, flags, param):
         # cv2.imshow('Original Image', img)
         # cv2.imshow('Masked Image', img_result)
 
-# 이미지 로드
-img = cv2.imread('C:\\PjtCCC\\Work\\YmJang\\image.png')
+# Streamlit 앱에서 이미지를 저장하고 그 경로를 반환받는 부분
+saved_image_path = save_image_to_folder(cropped_img)
+
+# 이제 OpenCV 코드에서 saved_image_path를 사용하여 이미지를 불러옵니다.
+img = cv2.imread(saved_image_path)
 if img is None:
     print("이미지를 불러오는데 실패했습니다. 경로를 확인하세요.")
 else:
