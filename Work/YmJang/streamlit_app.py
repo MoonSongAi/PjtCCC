@@ -66,6 +66,14 @@ def main():
     if 'loaded_image' not in st.session_state:
         st.session_state.loaded_image = None
     
+    # color_options 딕셔너리 정의
+    color_options = {
+        "Red": ([0, 100, 100], [10, 255, 255]),
+        "Green": ([50, 100, 100], [70, 255, 255]),
+        "Blue": ([110, 100, 100], [130, 255, 255]),
+        "Yellow": ([25, 100, 100], [35, 255, 255]),
+        "Black": ([0, 0, 0], [180, 255, 30])  # HSV 범위 예시 수정
+    }
 
     with st.sidebar:
         with st.expander("Select Image",expanded=True):            
@@ -79,7 +87,10 @@ def main():
                     value=2,  # 기본값
                     step=1  # 단계
             )
-            button_enabled = uploaded_Image is not None 
+            button_enabled = uploaded_Image is not None
+            # 색상 선택 드롭다운 메뉴
+            selected_color_name = st.selectbox("이미지 전처리 color_options", options=list(color_options.keys()))
+            lower_hsv, upper_hsv = color_options[selected_color_name]
             process_image = st.button("Analysis Design file....", disabled=not button_enabled)
 
 
@@ -156,42 +167,39 @@ def main():
                         st.image(saved_image, width=100)  # 썸네일 이미지 표시
 
 ######################## 추가함 ###################
-    with st.sidebar:
-        # 사이드바 설정...
-        if 'images_list' not in st.session_state:
-            st.session_state.images_list = []
-
-    # 사용자가 이미지를 선택할 수 있는 드롭다운 메뉴 생성
-    if st.session_state.images_list:
-        selected_image_name = st.selectbox("처리할 이미지 선택", options=st.session_state.images_list)
+    
+    selected_color_name = st.sidebar.selectbox("색상 선택", list(color_options.keys()))
+    lower_hsv, upper_hsv = color_options[selected_color_name]
+    
+    # "모든 이미지 처리" 버튼을 메인 페이지에 배치
+    if st.button('이미지 전처리'):
+        # 처리된 이미지를 저장할 리스트 초기화
+        if 'processed_images' not in st.session_state:
+            st.session_state.processed_images = []
         
-        # 선택된 이미지에 대한 처리 로직
-        if st.button('이미지 처리'):
-            # 선택된 이미지 이름으로 실제 이미지 객체를 얻음
-            image_path = os.path.join('path_to_saved_images', selected_image_name)  # 저장된 이미지 경로 조정 필요
-            image = Image.open(image_path).convert('RGB')
+        # 이미지 처리 및 저장
+        if 'images_list' in st.session_state:
+            for image_name in st.session_state.images_list:
+                image_path = os.path.join('path_to_saved_images', image_name)
+                pil_image = Image.open(image_path).convert('RGB')
+                processed_image = process_image_with_hsv_range(pil_image, np.array(lower_hsv), np.array(upper_hsv))
+                
+                # 처리된 이미지를 session_state에 추가
+                st.session_state.processed_images.append(processed_image)
+        
+        # 처리된 이미지를 썸네일 형태로 표시
+        if 'processed_images' in st.session_state and st.session_state.processed_images:
+            cols = st.columns(len(st.session_state.processed_images))
+            for idx, processed_image in enumerate(st.session_state.processed_images):
+                with cols[idx]:
+                    # 썸네일 이미지 표시 (PIL.Image 객체를 사용하는 경우)
+                    st.caption(st.session_state.images_list[idx])
+                    processed_image.thumbnail((200, 200))
+                    st.image(processed_image, width=100)
+        else:
+            st.write("이미지가 없습니다.")
 
-            # 사용자로부터 HSV 범위 입력 받기
-            st.write("HSV 색상 범위 선택")
-            lower_h = st.slider('Lower Hue', 0, 179, 0)
-            lower_s = st.slider('Lower Saturation', 0, 255, 100)
-            lower_v = st.slider('Lower Value', 0, 255, 100)
-            upper_h = st.slider('Upper Hue', 0, 179, 10)
-            upper_s = st.slider('Upper Saturation', 0, 255, 255)
-            upper_v = st.slider('Upper Value', 0, 255, 255)
-
-            lower_hsv = np.array([lower_h, lower_s, lower_v])
-            upper_hsv = np.array([upper_h, upper_s, upper_v])
-
-            # 이미지 처리
-            processed_image = process_image_with_hsv_range(image, lower_hsv, upper_hsv)
-            st.image(processed_image, caption='처리된 이미지', use_column_width=True)
-
-        # # 이미지 처리 버튼
-        # if st.button('이미지 처리'):
-        #     # 선택된 HSV 범위를 기반으로 이미지 처리
-        #     processed_image = process_image_with_hsv_range(image, lower_hsv, upper_hsv)
-        #     st.image(processed_image, caption='처리된 이미지', use_column_width=True)
+###################################################
 
     if process_lang:
         if not openai_api_key:
