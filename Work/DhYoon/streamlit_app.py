@@ -15,6 +15,10 @@ import numpy as np
 
 import os
 
+def delete_image(index):
+    # 주어진 인덱스의 이미지와 캡션을 삭제
+    del st.session_state.saved_images[index]
+    del st.session_state.images_list[index]
 
 def main():
     st.set_page_config(
@@ -62,6 +66,8 @@ def main():
         st.session_state.rotation_angle = 0
     if 'saved_images' not in st.session_state:
         st.session_state.saved_images = []
+    if 'process_images' not in st.session_state:
+        st.session_state.process_images = []
     if 'images_list' not in st.session_state:
         st.session_state.images_list = []
     if 'loaded_image' not in st.session_state:
@@ -71,7 +77,7 @@ def main():
     
 
     with st.sidebar:
-        with st.expander("Adjust HSV Thredhod",expanded=False):
+        with st.expander("Adjust HSV Threshold",expanded=False):
             color_selection = st.selectbox("Select Color", ["Red", "Green", "Blue","Yellow","Black"])
             if color_selection == "Red":
                 lower = [0, 100, 100] 
@@ -146,6 +152,9 @@ def main():
             st.session_state.loaded_image = uploaded_Image
             st.session_state.saved_images = []
             st.session_state.images_list = []
+            st.session_state.process_images = []
+            del_buttons = []
+
             st.session_state.anal_image = False
 
         with tab1:
@@ -170,10 +179,10 @@ def main():
                 st.session_state.rotation_angle += 90   # 회전 각도 업데이트
                 st.session_state.rotation_angle %= 360  # 360도가 되면 0으로 리셋
                 # 현재 회전 각도에 따라 이미지 회전
-            
             st.session_state.canvas_image_data = st.session_state.canvas_image_data.rotate(
                                                               st.session_state.rotation_angle,
                                                               expand = True)
+            # print(f"st.session_state.rotation_angle={st.session_state.rotation_angle}")
 
             st.write("***_:blue[Preview Cropped Image]_***")
             st.image(st.session_state.canvas_image_data)
@@ -197,13 +206,27 @@ def main():
                         st.caption(st.session_state.images_list[idx])
                         saved_image.thumbnail((200, 200))
                         st.image(saved_image, width=100)  # 썸네일 이미지 표시
+                        # 삭제 버튼 생성
+                        if st.button('Delete'+str(idx), key="delete"+str(idx)):
+                            del_buttons.append(idx)
+                        # 삭제 버튼이 클릭된 경우
+                for idx in reversed(del_buttons):  # 뒤에서부터 삭제해야 인덱스 문제가 발생하지 않음
+                    delete_image(idx)
     if process_image:
         # 선택된 이미지 이름으로 실제 이미지 객체를 얻음
-        for img_path in st.session_state.images_list:
+        cols = st.columns(len(st.session_state.images_list))
+        for idx, img_path in enumerate(st.session_state.images_list):
             image = Image.open(img_path).convert('RGB')
             processed_image = process_image_with_hsv_range(image, lower_hsv, upper_hsv)
+            st.session_state.process_images.append(processed_image)
             print(lower_hsv,upper_hsv)
-            st.image(processed_image, caption=img_path, use_column_width=True)
+            with cols[idx]:
+                # 썸네일 크기로 이미지 리사이즈
+                st.caption(img_path)
+                processed_image.thumbnail((200, 200))
+                st.image(processed_image, width=100)  # 썸네일 이미지 표시
+                st.button("확대"+str(idx))
+
     else:
         print("process_image False")
 
