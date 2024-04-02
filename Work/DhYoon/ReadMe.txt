@@ -21,3 +21,7 @@ conda activate langchain_st
 >>>pip install streamlit-cropper
 #>>>pip install pdf2image
 >>>pip install PyMuPDF
+# 4/2 
+>>>pip install pypdf
+>>>pip install sentence-transformers
+>>>pip install faiss-gpu
