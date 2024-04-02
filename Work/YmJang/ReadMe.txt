@@ -21,3 +21,4 @@ conda activate langchain_st
 >>>pip install streamlit-cropper
 #>>>pip install pdf2image
 >>>pip install PyMuPDF
+>>>pip install opencv-python
