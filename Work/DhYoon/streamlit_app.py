@@ -4,7 +4,7 @@ import streamlit as st
 from langchain_community.callbacks import get_openai_callback
 from langchain.memory import StreamlitChatMessageHistory
 
-from langchain_integration import setup_langchain
+from langchain_integration import is_vector_db ,load_chain,  setup_langchain
 from analysis_image import save_image_to_folder ,load_to_image , \
                         get_image_base64,process_image_with_hsv_range 
 
@@ -25,6 +25,7 @@ def delete_image(image_index):
         st.rerun()
 
 def main():
+    DB_INDEX = "VECTOR_DB_INDEX"
     st.set_page_config(
         page_title="표시 디자인",
         page_icon=":volcano:")
@@ -82,6 +83,8 @@ def main():
         st.session_state.anal_button_click = False
     if 'delete_request' not in st.session_state:
         st.session_state.delete_request = False
+    if 'vector_db' not in st.session_state:
+        st.session_state.vector_db = is_vector_db(DB_INDEX)
     
 
     with st.sidebar:
@@ -137,9 +140,17 @@ def main():
                st.session_state.anal_button_click = True  #Button Click 을 session 동안 유지 하기위해서 
 
         with st.expander("Setting for LangChain",expanded=False):            
+            openai_api_key = st.text_input("OpenAI API Key", key="chatbot_api_key", type="password")
+            model_name = st.selectbox(
+                "Choose the model for OpenAI LLM API",
+                options=['gpt-3.5-turbo', 'gpt-3', 'gpt-4','davinci-codex', 'curie'],  # 사용 가능한 모델 이름들
+                index=0  # 'gpt-3.5-turbo'를 기본값으로 설정
+            )
+
+            load_lang = st.button("load vector DB", disabled=not st.session_state.vector_db)
+
             uploaded_files =  st.file_uploader("Upload your file",type=['pdf','docx'],accept_multiple_files=True)
             # Streamlit 사이드바에 슬라이더 추가
-            openai_api_key = st.text_input("OpenAI API Key", key="chatbot_api_key", type="password")
             chunk_size = st.slider("Chunk Size", min_value=100, max_value=2000, value=900, step=50)
             chunk_overlap = st.slider("Chunk Overlap", min_value=50, max_value=500, value=100, step=10)
             # Streamlit 사이드바 콤보박스 추가
@@ -147,12 +158,6 @@ def main():
                 "Choose the device for the model",
                 options=['cpu', 'cuda', 'cuda:0', 'cuda:1'],  # 여기에 필요한 모든 옵션을 추가하세요.
                 index=0  # 'cpu'를 기본값으로 설정
-            )
-            # Streamlit 사이드바  콤보박스 추가
-            model_name = st.selectbox(
-                "Choose the model for OpenAI LLM API",
-                options=['gpt-3.5-turbo', 'gpt-3', 'gpt-4','davinci-codex', 'curie'],  # 사용 가능한 모델 이름들
-                index=0  # 'gpt-3.5-turbo'를 기본값으로 설정
             )
             # 파일이 업로드 되었는지 확인하고 버튼의 활성화 상태 결정
             button_enabled = uploaded_files is not None and len(uploaded_files) > 0
@@ -186,7 +191,13 @@ def main():
             with col2:
                 # 이미지 회전 버튼
                 rotate_image = st.button("Rotate cropped image")
+            if save_image:
+                save_name = save_image_to_folder(st.session_state.canvas_image_data)
+                # 저장된 이미지 리스트에 이미지 추가
+                st.session_state.saved_images.append(st.session_state.canvas_image_data)
+                st.session_state.images_list.append(save_name)
 
+ 
             if rotate_image:
                 st.session_state.rotation_angle += 90   # 회전 각도 업데이트
                 st.session_state.rotation_angle %= 360  # 360도가 되면 0으로 리셋
@@ -199,12 +210,6 @@ def main():
             st.write("***_:blue[Preview Cropped Image]_***")
             st.image(st.session_state.canvas_image_data)
             st.session_state.anal_image = True
-            if save_image:
-                save_name = save_image_to_folder(st.session_state.canvas_image_data)
-                # 저장된 이미지 리스트에 이미지 추가
-                st.session_state.saved_images.append(st.session_state.canvas_image_data)
-                st.session_state.images_list.append(save_name)
-
             # 저장된 이미지 썸네일을 횡으로 나열하여 표시
             if st.session_state.saved_images:
                 # 각 이미지를 작은 썸네일로 변환하여 표시
@@ -237,60 +242,63 @@ def main():
                             st.image(st.session_state.process_images[idx],width=300)
                         else:
                             st.image(st.session_state.process_images[idx],width=5)
+    if not openai_api_key:
+       openai_api_key = st.secrets["OpenAI_Key"]
+       if not openai_api_key:
+          st.info("Please add your OpenAI API key to continue.")
+          st.stop()
 
+    if load_lang:
+        conversation_chain = load_chain(DB_INDEX,device_option,openai_api_key,model_name)
+        st.session_state.conversation = conversation_chain
+        st.session_state.processComplete = True
 
     if process_lang:
-        if not openai_api_key:
-            openai_api_key = st.secrets["OpenAI_Key"]
-            if not openai_api_key:
-                st.info("Please add your OpenAI API key to continue.")
-                st.stop()
-        # Langchain 설정
         conversation_chain = setup_langchain(st , tab3, 
                                             uploaded_files,
                                             chunk_size,chunk_overlap,device_option,
                                             openai_api_key,model_name)
-
         st.session_state.conversation = conversation_chain
-
         st.session_state.processComplete = True
 
-    if 'messages' not in st.session_state:
-        st.session_state['messages'] = [{"role": "assistant", 
-                                        "content": "안녕하세요! 주어진 문서에 대해 궁금하신 것이 있으면 언제든 물어봐주세요!"}]
+    with tab2:
+        if 'messages' not in st.session_state:
+            st.session_state['messages'] = [{"role": "assistant", 
+                                            "content": "안녕하세요! 주어진 문서에 대해 궁금하신 것이 있으면 언제든 물어봐주세요!"}]
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
 
-    for message in st.session_state.messages:
-        with tab2.chat_message(message["role"]):
-            tab2.markdown(message["content"])
+        history = StreamlitChatMessageHistory(key="chat_messages")
 
-    history = StreamlitChatMessageHistory(key="chat_messages")
+        # Chat logic
+        query = st.chat_input("질문을 입력해주세요.")
+        if query:
+            st.session_state.messages.append({"role": "user", "content": query})
 
-    # Chat logic
-    query = tab2.chat_input("질문을 입력해주세요.")
-    if query:
-        st.session_state.messages.append({"role": "user", "content": query})
+            with st.chat_message("user"):
+                st.markdown(query)
 
-        with tab2.chat_message("user"):
-            tab2.markdown(query)
+            with st.chat_message("assistant"):
+                chain = st.session_state.conversation
+                if chain is None:
+                    st.warning('학습된 정보가 없습니다.')
+                    st.stop()
 
-        with tab2.chat_message("assistant"):
-            chain = st.session_state.conversation
-            if chain is None:
-                st.warning('학습된 정보가 없습니다.')
-                st.stop()
+                with st.spinner("Thinking..."):
+                    result = chain({"question": query})
+                    with get_openai_callback() as cb:
+                        st.session_state.chat_history = result['chat_history']
+                    response = result['answer']
+                    st.session_state.messages.append({"role": "assistant", "content": response})
 
-            with st.spinner("Thinking..."):
-                result = chain({"question": query})
-                with get_openai_callback() as cb:
-                    st.session_state.chat_history = result['chat_history']
-                response = result['answer']
-                source_documents = result['source_documents']
+                    source_documents = result['source_documents']
 
-                tab2.markdown(response)
-                with tab2.expander("참고 문서 확인"):
-                    tab2.markdown(source_documents[0].metadata['source'], help = source_documents[0].page_content)
-                    tab2.markdown(source_documents[1].metadata['source'], help = source_documents[1].page_content)
-                    tab2.markdown(source_documents[2].metadata['source'], help = source_documents[2].page_content)
+                    st.markdown(response)
+                    with st.expander("참고 문서 확인"):
+                        st.markdown(source_documents[0].metadata['source'], help = source_documents[0].page_content)
+                        st.markdown(source_documents[1].metadata['source'], help = source_documents[1].page_content)
+                        st.markdown(source_documents[2].metadata['source'], help = source_documents[2].page_content)
 
 
 if __name__ == '__main__':
