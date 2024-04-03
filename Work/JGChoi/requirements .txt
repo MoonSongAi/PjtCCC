@@ -32,4 +32,5 @@ wheel==0.41.2
 # roboflow 
 # git clone https://github.com/ultralytics/yolov5
 # pip install -r yolov5/requirements.txt
+# torch torchvision torchaudio
 
