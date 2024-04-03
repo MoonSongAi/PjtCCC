@@ -5,20 +5,24 @@ from langchain_community.callbacks import get_openai_callback
 from langchain.memory import StreamlitChatMessageHistory
 
 from langchain_integration import setup_langchain
-from analysis_image import save_image_to_folder ,load_to_image ,process_image_with_hsv_range
+from analysis_image import save_image_to_folder ,load_to_image , \
+                        get_image_base64,process_image_with_hsv_range 
 
 from streamlit_cropper import st_cropper
 from PIL import Image
 import numpy as np
-
-
-
 import os
 
-def delete_image(index):
-    # 주어진 인덱스의 이미지와 캡션을 삭제
-    del st.session_state.saved_images[index]
-    del st.session_state.images_list[index]
+
+# 이미지 삭제 함수
+def delete_image(image_index):
+    if 0 <= image_index < len(st.session_state.saved_images):
+        del st.session_state.saved_images[image_index]
+        del st.session_state.images_list[image_index]
+        # 이미지 리스트 변경 후 다시 이미지와 버튼 표시를 위해 페이지 갱신
+        if len(st.session_state.images_list) == 0:
+            st.session_state.anal_button_click = False
+        st.rerun()
 
 def main():
     st.set_page_config(
@@ -74,11 +78,18 @@ def main():
         st.session_state.loaded_image = None
     if 'anal_image' not in st.session_state:
         st.session_state.anal_image = False
+    if 'anal_button_click' not in st.session_state:
+        st.session_state.anal_button_click = False
+    if 'delete_request' not in st.session_state:
+        st.session_state.delete_request = False
     
 
     with st.sidebar:
         with st.expander("Adjust HSV Threshold",expanded=False):
-            color_selection = st.selectbox("Select Color", ["Red", "Green", "Blue","Yellow","Black"])
+            colors = ["Red", "Green", "Blue", "Yellow", "Black"]
+            default_color = "Black"             # 기본으로 선택하고 싶은 색상
+            default_index = colors.index(default_color)  # 'Black'의 인덱스 찾기
+            color_selection = st.selectbox("Select line color", colors, index=default_index)
             if color_selection == "Red":
                 lower = [0, 100, 100] 
                 upper = [10, 255, 255]
@@ -122,7 +133,8 @@ def main():
             print('st.expander:',st.session_state.anal_image)
 
             process_image = st.button("Analysis Design file....", disabled= not st.session_state.anal_image)
-
+            if process_image:
+               st.session_state.anal_button_click = True  #Button Click 을 session 동안 유지 하기위해서 
 
         with st.expander("Setting for LangChain",expanded=False):            
             uploaded_files =  st.file_uploader("Upload your file",type=['pdf','docx'],accept_multiple_files=True)
@@ -192,9 +204,6 @@ def main():
                 # 저장된 이미지 리스트에 이미지 추가
                 st.session_state.saved_images.append(st.session_state.canvas_image_data)
                 st.session_state.images_list.append(save_name)
-                st.session_state.rotation_angle = 0
-                st.sidebar.write("Save image loading...........")
-                # print('save_image:',st.session_state.anal_image)
 
             # 저장된 이미지 썸네일을 횡으로 나열하여 표시
             if st.session_state.saved_images:
@@ -207,28 +216,28 @@ def main():
                         saved_image.thumbnail((200, 200))
                         st.image(saved_image, width=100)  # 썸네일 이미지 표시
                         # 삭제 버튼 생성
-                        if st.button('Delete'+str(idx), key="delete"+str(idx)):
-                            del_buttons.append(idx)
-                        # 삭제 버튼이 클릭된 경우
-                for idx in reversed(del_buttons):  # 뒤에서부터 삭제해야 인덱스 문제가 발생하지 않음
-                    delete_image(idx)
-    if process_image:
-        # 선택된 이미지 이름으로 실제 이미지 객체를 얻음
-        cols = st.columns(len(st.session_state.images_list))
-        for idx, img_path in enumerate(st.session_state.images_list):
-            image = Image.open(img_path).convert('RGB')
-            processed_image = process_image_with_hsv_range(image, lower_hsv, upper_hsv)
-            st.session_state.process_images.append(processed_image)
-            print(lower_hsv,upper_hsv)
-            with cols[idx]:
-                # 썸네일 크기로 이미지 리사이즈
-                st.caption(img_path)
-                processed_image.thumbnail((200, 200))
-                st.image(processed_image, width=100)  # 썸네일 이미지 표시
-                st.button("확대"+str(idx))
+                        if st.button(f'Delete {idx}', key=f"delete_{idx}"):
+                            st.session_state.delete_request = True
+                            delete_image(idx)   # 삭제 버튼이 클릭되면, 해당 이미지를 삭제하기 위한 플래그 설정
+            if st.session_state.anal_button_click:
+                # 선택된 이미지 이름으로 실제 이미지 객체를 얻음
+                cols = st.columns(len(st.session_state.images_list))
+                for idx, img_path in enumerate(st.session_state.images_list):
+                    image = Image.open(img_path).convert('RGB')
+                    processed_image = process_image_with_hsv_range(image, lower_hsv, upper_hsv)
+                    st.session_state.process_images.append(processed_image)
+                    # print(lower_hsv,upper_hsv)
+                    with cols[idx]:
+                        # 썸네일 크기로 이미지 리사이즈
+                        # st.caption(img_path)
+                        processed_image.thumbnail((200, 200))
+                        st.image(processed_image, width=100)  # 썸네일 이미지 표시
+                        if st.button(f'Zoom In {idx}', key=f"zoomin_{idx}"):
+                            # HTML 코드를 Streamlit에 삽입하여 'Zoom In' 버튼 생성
+                            st.image(st.session_state.process_images[idx],width=300)
+                        else:
+                            st.image(st.session_state.process_images[idx],width=5)
 
-    else:
-        print("process_image False")
 
     if process_lang:
         if not openai_api_key:

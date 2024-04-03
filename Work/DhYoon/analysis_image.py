@@ -9,6 +9,8 @@ import fitz #PyNuPDF
 import os
 import io
 import uuid
+import base64
+
 def load_to_image(uploaded_Image,pdf_value):
     if uploaded_Image.type == 'application/pdf':
         UPLOAD_DIRECTORY = ".\Images"
@@ -60,6 +62,14 @@ def analysis_image_process(st,tab,uploaded_Image):
         st.write("Preview")
             # _ = cropped_img.thumbnail((150,150))
         st.image(cropped_img)
+
+def get_image_base64(image):
+    # PIL Image 객체를 Base64 인코딩된 문자열로 변환
+    buffered = io.BytesIO()
+    image.save(buffered, format="PNG")  # 이미지 포맷에 따라 "JPEG" 등으로 변경 가능
+    img_str = base64.b64encode(buffered.getvalue()).decode()
+    return "data:image/png;base64," + img_str
+
 
 def process_image_with_hsv_range(pil_image, lower_hsv, upper_hsv):
     """
