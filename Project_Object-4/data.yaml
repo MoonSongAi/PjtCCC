@@ -1,0 +1,13 @@
+names:
+- GMP
+- HEALTHY
+nc: 2
+roboflow:
+  license: CC BY 4.0
+  project: project_object-igclo
+  url: https://universe.roboflow.com/sessac/project_object-igclo/dataset/4
+  version: 4
+  workspace: sessac
+test: C:/PjtCCC/Project_Object-4/test/images
+train: C:/PjtCCC/Project_Object-4/train/images
+val: C:/PjtCCC/Project_Object-4/valid/images
