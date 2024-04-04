@@ -89,7 +89,11 @@ def display_document_page(tab, documents):
         metadata = ast.literal_eval(metadata_str)
         # metadata에서 'source'와 'page' 정보를 추출합니다
         source = metadata['source']
-        page = metadata['page']
+        # page = metadata['page']
+        # 'page' 키에 대한 값을 가져오되, 키가 없는 경우 None (또는 다른 기본값)을 반환합니다.
+        page = metadata.get('page', None)
+        if page is None:
+            page = 'None'
         if first_source != source:
             tab.subheader('source:'+ source)
             first_source = source

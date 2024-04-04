@@ -262,9 +262,32 @@ def main():
         st.session_state.processComplete = True
 
     with tab2:
+        # 버튼에 표시될 내용을 리스트로 정의
+        button_labels = ["청정지역, 청정해역 임을 증명한는 서류는 ?", 
+                         "기능성원료의 인체적용시험 결과는 어떻게 인용해야 하나요?", 
+                         "타사의 심의자료 열람이 가능한가요?",
+                         "부당한 표시 또는 광고의 내용 이란?", 
+                         "혈당조정 기능성 원료는?", 
+                         "건강기능식품의 기능성 내용과 사례를 알려줘"]
+            # 2행 3열 구조로 버튼을 배치하기 위한 인덱스
+        if 'last_clicked' not in st.session_state:
+            st.session_state['last_clicked'] = ''
+
+        idx = 0
+        # 두 행을 생성
+        for i in range(2):  # 두 행
+            cols = st.columns(3)
+            for col in cols:  # 각 행에 3개의 열
+                if idx < len(button_labels):
+                    button_key = f"button_{idx}"
+                    if col.button(button_labels[idx], key=button_key):
+                        # 버튼 클릭 시, 해당 버튼의 레이블을 저장
+                        st.session_state['last_clicked'] = button_labels[idx]
+                    idx += 1
+
         if 'messages' not in st.session_state:
             st.session_state['messages'] = [{"role": "assistant", 
-                                            "content": "안녕하세요! 주어진 문서에 대해 궁금하신 것이 있으면 언제든 물어봐주세요!"}]
+                                            "content": "안녕하세요! 표시디자인과 관련된 궁금하신 것이 있으면 무었이든 질문 하세요!"}]
         for message in st.session_state.messages:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
@@ -272,7 +295,15 @@ def main():
         history = StreamlitChatMessageHistory(key="chat_messages")
 
         # Chat logic
-        query = st.chat_input("질문을 입력해주세요.")
+        if st.session_state['last_clicked'] != '':
+            query_text =  st.session_state['last_clicked']
+            st.session_state['last_clicked'] = ''
+            query = query_text
+            st.chat_input(query_text)
+        else:
+            query_text = "질문을 입력해주세요."
+            query = st.chat_input(query_text)
+
         if query:
             st.session_state.messages.append({"role": "user", "content": query})
 

@@ -25,3 +25,6 @@ conda activate langchain_st
 >>>pip install pypdf
 >>>pip install sentence-transformers
 >>>pip install faiss-gpu
+#4/4
+>>>pip install docx2txt
+
