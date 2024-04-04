@@ -4,7 +4,7 @@ import streamlit as st
 from langchain_community.callbacks import get_openai_callback
 from langchain.memory import StreamlitChatMessageHistory
 
-from langchain_integration import is_vector_db ,load_chain,  setup_langchain
+from langchain_integration import is_vector_db ,load_langchain,  setup_langchain
 from analysis_image import save_image_to_folder ,load_to_image , \
                         get_image_base64,process_image_with_hsv_range 
 
@@ -147,7 +147,7 @@ def main():
                 index=0  # 'gpt-3.5-turbo'를 기본값으로 설정
             )
 
-            load_lang = st.button("load vector DB", disabled=not st.session_state.vector_db)
+            load_langchain = st.button("load vector DB", disabled= not st.session_state.vector_db)
 
             uploaded_files =  st.file_uploader("Upload your file",type=['pdf','docx'],accept_multiple_files=True)
             # Streamlit 사이드바에 슬라이더 추가

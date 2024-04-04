@@ -31,7 +31,7 @@ def is_vector_db(index_name="VECTOR_DB_INDEX"):
         print(f"FAISS 인덱스 '{index_name}'가 존재하지 않습니다.")
         return False
 
-def load_chain(index_name,device_option,openai_api_key,model_name):
+def load_langchain(index_name,device_option,openai_api_key,model_name):
     # 로컬에 저장된 데이터베이스를 불러와 new_db 변수에 할당합니다.
     embeddings = HuggingFaceEmbeddings(
                                         model_name="jhgan/ko-sroberta-multitask",
