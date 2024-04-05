@@ -16,6 +16,36 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.memory import ConversationBufferMemory
 from langchain_community.vectorstores import FAISS
 
+import os 
+
+def is_vector_db(index_name="VECTOR_DB_INDEX"):
+    # 파일 이름을 경로와 함께 구성합니다. 현재 디렉토리를 기준으로 합니다.
+    # 파일 확장자는 일반적으로 '.index'입니다.
+    index_path = f"./{index_name}"
+
+    # 파일이 존재하는지 체크합니다.
+    if os.path.exists(index_path):
+        print(f"FAISS 인덱스 '{index_name}'가 존재합니다.")
+        return True
+    else:
+        print(f"FAISS 인덱스 '{index_name}'가 존재하지 않습니다.")
+        return False
+
+def load_langchain(index_name,device_option,openai_api_key,model_name):
+    # 로컬에 저장된 데이터베이스를 불러와 new_db 변수에 할당합니다.
+    embeddings = HuggingFaceEmbeddings(
+                                        model_name="jhgan/ko-sroberta-multitask",
+                                        model_kwargs={'device': device_option},
+                                        encode_kwargs={'normalize_embeddings': True}
+                                        )  
+
+    new_db = FAISS.load_local(index_name, embeddings,
+                          allow_dangerous_deserialization=True)
+
+    conversation_chain = get_conversation_chain(new_db,openai_api_key,model_name) 
+
+    return conversation_chain
+
 # Langchain 설정 및 초기화 함수
 def setup_langchain(st , tab, uploaded_files,chunk_size,chunk_overlap,device_option,openai_api_key,model_name):
 
@@ -25,6 +55,8 @@ def setup_langchain(st , tab, uploaded_files,chunk_size,chunk_overlap,device_opt
 
     text_chunks = get_text_chunks(files_text, chunk_size, chunk_overlap)
     vetorestore = get_vectorstore(text_chunks,device_option)
+
+    vetorestore.save_local("VECTOR_DB_INDEX")
     
     conversation_chain = get_conversation_chain(vetorestore,openai_api_key,model_name) 
 
@@ -57,7 +89,11 @@ def display_document_page(tab, documents):
         metadata = ast.literal_eval(metadata_str)
         # metadata에서 'source'와 'page' 정보를 추출합니다
         source = metadata['source']
-        page = metadata['page']
+        # page = metadata['page']
+        # 'page' 키에 대한 값을 가져오되, 키가 없는 경우 None (또는 다른 기본값)을 반환합니다.
+        page = metadata.get('page', None)
+        if page is None:
+            page = 'None'
         if first_source != source:
             tab.subheader('source:'+ source)
             first_source = source
