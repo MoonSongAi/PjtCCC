@@ -147,7 +147,7 @@ def main():
                 index=0  # 'gpt-3.5-turbo'를 기본값으로 설정
             )
 
-            load_langchain = st.button("load vector DB", disabled= not st.session_state.vector_db)
+            load_lang = st.button("load vector DB", disabled= not st.session_state.vector_db)
 
             uploaded_files =  st.file_uploader("Upload your file",type=['pdf','docx'],accept_multiple_files=True)
             # Streamlit 사이드바에 슬라이더 추가
@@ -249,7 +249,7 @@ def main():
           st.stop()
 
     if load_lang:
-        conversation_chain = load_chain(DB_INDEX,device_option,openai_api_key,model_name)
+        conversation_chain = load_langchain(DB_INDEX,device_option,openai_api_key,model_name)
         st.session_state.conversation = conversation_chain
         st.session_state.processComplete = True
 
