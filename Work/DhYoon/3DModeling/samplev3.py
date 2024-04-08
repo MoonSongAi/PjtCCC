@@ -9,7 +9,7 @@ import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from PIL import Image
-from PyQt5.QtCore import QPoint, Qt
+from PyQt5.QtCore import QPoint, Qt ,pyqtSignal
 from PyQt5.QtOpenGL import QGLWidget
 from PyQt5.QtWidgets import (
     QApplication,
@@ -22,8 +22,66 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtGui import QImage, QPixmap, QPainter, QPen, QColor
+class ClickableLabel(QLabel):
+    clicked = pyqtSignal(int, int)  # 사용자 정의 시그널, 클릭된 좌표를 전달합니다.
 
+    def __init__(self, original_width, original_height, *args, **kwargs):
+        super(ClickableLabel, self).__init__(*args, **kwargs)
+        self.original_width = original_width
+        self.original_height = original_height
+
+    def mousePressEvent(self, event):
+        # QLabel의 현재 크기에 맞는 스케일 비율을 계산
+        scale_width = self.width() / self.original_width
+        scale_height = self.height() / self.original_height
+
+        # 클릭 좌표를 원본 QPixmap 상의 좌표로 변환
+        original_x = event.pos().x() / scale_width
+        original_y = event.pos().y() / scale_height
+
+        # 사용자 정의 시그널을 발생시켜 MainWindow에 클릭 좌표 전달
+        self.clicked.emit(int(original_x), int(original_y))
+
+class BoxCalculator:
+    def __init__(self, boxes):
+        self.boxes = boxes
+    
+    def calculate_dimensions(self):
+        # 가장 넓은 박스 찾기
+        front_box, max_area = self.find_largest_box()
+
+        # "앞면" 박스의 가로와 세로 길이를 계산
+        front_width = front_box[1][0] - front_box[0][0]
+        front_height = front_box[1][1] - front_box[0][1]
+
+        # 앞면 중 가장 긴 쪽을 높이로 정하고 나머지를 가로로 정함
+        height, width = max(front_width, front_height), min(front_width, front_height)
+
+        # 깊이 계산
+        depth = self.calculate_depth(front_width)
+
+        return height, width, depth
+    
+    def find_largest_box(self):
+        max_area = 0
+        front_box = None
+        for box in self.boxes:
+            width = box[1][0] - box[0][0]
+            height = box[1][1] - box[0][1]
+            area = width * height
+            if area > max_area:
+                max_area = area
+                front_box = box
+        return front_box, max_area
+    
+    def calculate_depth(self, front_width):
+        depths = []
+        for box in self.boxes:
+            box_width = box[1][0] - box[0][0]
+            depth = abs(front_width - box_width)
+            depths.append(depth)
+        return sum(depths) / len(depths) if depths else 0
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -134,7 +192,7 @@ class MainWindow(QMainWindow):
                     intersections.append(intersect)
         return intersections
     
-    def remove_near_duplicates(self, intersections, tolerance=5):
+    def remove_near_duplicates(self, intersections, tolerance):
         unique_intersections = []
         for current in intersections:
             # 현재 교차점이 이미 추가된 교차점들과 너무 가까운지 확인합니다.
@@ -180,6 +238,90 @@ class MainWindow(QMainWindow):
         box_coordinates = [(min_x, min_y), (min_x, max_y), (max_x, max_y), (max_x, min_y)]
 
         return box_coordinates
+    
+    def find_non_overlapping_boxes(self, points):
+        boxes = []
+        for i in range(len(points)):
+            for j in range(i + 1, len(points)):
+                min_x = min(points[i][0], points[j][0])
+                max_x = max(points[i][0], points[j][0])
+                min_y = min(points[i][1], points[j][1])
+                max_y = max(points[i][1], points[j][1])
+                if (max_x - min_x)  > 0 and (max_y - min_y) > 0:                    # 면적이 0보다 큰 박스만 추가
+                    if ((min_x , min_y) in points) and ((max_x , min_y) in points) and \
+                       ((min_x , max_y) in points) and ((max_x , max_y) in points): # 좌상, 좌하,우상,우하 좌표가 Points에 있어야 한다
+                        boxes.append([(min_x, min_y), (max_x, max_y)])
+                        # print(f'[({min_x},{min_y}),({max_x},{max_y})]')
+        # 중복 제거
+        u_boxes = []
+        for box in boxes:
+            if box not in u_boxes:
+                u_boxes.append(box)
+
+        # 좌상 좌표가 같은 박스들을 찾고, 그 중 가장 작은 면적의 박스를 찾습니다.
+        same_top_left_boxes = {}
+        for box in u_boxes:
+            top_left = box[0]
+            width = box[1][0] - box[0][0]
+            height = box[1][1] - box[0][1]
+            area = width * height
+            
+            if top_left in same_top_left_boxes:
+                if same_top_left_boxes[top_left]['area'] > area:
+                    same_top_left_boxes[top_left] = {'box': box, 'area': area}
+            else:
+                same_top_left_boxes[top_left] = {'box': box, 'area': area}
+
+        # 가장 작은 박스를 찾습니다.
+        smallest_boxes = [details['box'] for details in same_top_left_boxes.values()]
+        return smallest_boxes
+    
+    def draw_boxes_on_image(self, qImg, boxes):
+        # QImage를 QPixmap으로 변환
+        pixmap = QPixmap.fromImage(qImg)
+        
+        # QPainter 객체 생성 및 시작
+        painter = QPainter(pixmap)
+        
+        # 점선 스타일 설정
+        pen = QPen(QColor(0, 0, 255), 4, Qt.DashLine)  # 감색, 두께 4, 점선 스타일
+        painter.setPen(pen)
+        
+        # 각 박스에 대해 점선 사각형을 그림
+        for box in boxes:
+            left, top = box[0]
+            right, bottom = box[1]
+            width = right - left
+            height = bottom - top
+            painter.drawRect(left, top, width, height)
+        
+        # QPainter 사용 종료
+        painter.end()
+        
+        # 그려진 QPixmap을 QImage로 다시 변환 (필요한 경우)
+        # new_qImg = pixmap.toImage()
+
+        # QPixmap을 반환 (이 예시에서는 QImage 대신 QPixmap 사용을 추천)
+        return pixmap
+    def save_boxes(self, save_path, qImg, boxes):        
+        # 지정된 저장 경로가 없으면 생성합니다.
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+
+        for index , box in enumerate(boxes):
+            left, top = box[0]
+            right, bottom = box[1]
+            width = right - left
+            height = bottom - top
+             # 박스 영역을 QImage로부터 추출하여 새 QPixmap을 만듦
+            cropped_qimage = qImg.copy(left, top, width, height)
+            cropped_pixmap = QPixmap.fromImage(cropped_qimage)
+
+            # QPixmap을 이미지 파일로 저장
+            filename = os.path.join(save_path, f'cropped_box_{index}.jpg')
+            cropped_pixmap.save(filename, 'JPG')
+        
+
     def loadImage(self):
         filePath, _ = QFileDialog.getOpenFileName(self, "Select Image", "", "Image Files (*.png *.jpg *.jpeg *.bmp *.gif)")
         if filePath:
@@ -195,11 +337,20 @@ class MainWindow(QMainWindow):
                 # upper_black = (180, 255, 60)
                 # img_mask = cv2.inRange(img_hsv, lower_black, upper_black)
 
-                # 핑크색의 HSV 범위 정의
-                lower_pink = (140, 100, 100)
-                upper_pink = (160, 255, 255)
                 img_hsv = cv2.cvtColor(img_color, cv2.COLOR_BGR2HSV)
-                img_mask = cv2.inRange(img_hsv, lower_pink, upper_pink)
+                # 회색색의 HSV 범위 정의 ccc.jpg
+                lower_gray = (79, 215, 18)
+                upper_gray = (99, 255, 118)
+                img_mask = cv2.inRange(img_hsv, lower_gray, upper_gray)
+                # 핑크색의 HSV 범위 정의 aaa.jpg
+                # lower_pink = (140, 100, 100)
+                # upper_pink = (160, 255, 255)
+                # img_mask = cv2.inRange(img_hsv, lower_pink, upper_pink)
+                # 연녹색 HSV 범위 정의 bbb.jpg
+                # lower_yellow = (6, 109,210)   # Hue 15, Saturation 100, Value 100
+                # upper_yellow = (26, 189, 255)   # Hue 30, Saturation 255, Value 255
+                # img_mask = cv2.inRange(img_hsv, lower_yellow, upper_yellow)
+
 
                 # img_mask 이미지를 QImage로 변환할 때 bytesPerLine 지정
                 maskQImg = QImage(img_mask.data, img_mask.shape[1], img_mask.shape[0], img_mask.shape[1], QImage.Format_Grayscale8)
@@ -216,7 +367,7 @@ class MainWindow(QMainWindow):
                 edges = cv2.Canny(mask_array, threshold1=50, threshold2=150)
 
                 # Hough 변환을 사용하여 선 검출
-                lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=150, minLineLength=100, maxLineGap=150)
+                lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=110, minLineLength=80, maxLineGap=150)
 
                 # 90도로 꺾이는 선의 위치 찾기
                 sel_lines = []
@@ -228,38 +379,67 @@ class MainWindow(QMainWindow):
                     if abs(theta) < 92 and abs(theta) > 88:
                         cv2.line(edges, (x1, y1), (x2, y2), (255, 0, 0), 4)
                         sel_lines.append((x1,y1,x2,y2))
-                        print(f'{i} 2theta={theta} x1, y1, x2, y2 = {x1} {y1} {x2} {y2}')
+                        # print(f'{i} 2theta={theta} x1, y1, x2, y2 = {x1} {y1} {x2} {y2}')
                     # 각도가 수평선
                     if abs(theta) < 2 or abs(theta-180) < 2 or abs(theta-90) < 2:
                     # if abs(theta) < 2 or abs(theta-180) < 2 or abs(theta-90) < 2:
                         cv2.line(edges, (x1, y1), (x2, y2), (255, 0, 0), 4)
                         sel_lines.append((x1,y1,x2,y2))
-                        print(f'{i} 2theta={theta} x1, y1, x2, y2 = {x1} {y1} {x2} {y2}')
+                        # print(f'{i} 2theta={theta} x1, y1, x2, y2 = {x1} {y1} {x2} {y2}')
                 
 
                 intersections = self.get_intersections(sel_lines)
                 # 교차점 리스트에서 중복 또는 비슷한 위치 제거
-                unique_intersections = self.remove_near_duplicates(intersections , 10)
+                unique_intersections = self.remove_near_duplicates(intersections , 12)
                 # 이미지에 교차점을 그림
-                print(unique_intersections)
-                averaged_points = self.average_within_tolerance( unique_intersections, 10)
-                print(averaged_points)
+                averaged_points = self.average_within_tolerance( unique_intersections, 12)
+                # print(averaged_points)
+
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                font_scale = 1.5
+                font_color = (255, 0, 0) # 노란색
+                font_thickness = 2
+                circle_radius = 20
+                circle_color = (255, 0, 0) # 빨간색
+                circle_thickness = -1 # 원 안을 채움
                 for point in averaged_points:
                     x, y = point
-                    if 0 <= x < edges.shape[1] and 0 <= y < edges.shape[0]:  # 이미지 범위 내에 있는지 확인
-                        cv2.circle(edges, (int(x), int(y)), 20, (255, 0, 0), -1)
-                    
-                print(f'count={len(unique_intersections)}')
-                box_coordinates = self.create_box_from_points( averaged_points)
-                print("Box Coordinates:")
-                for coord in box_coordinates:
-                    print(coord)
+                   # if 0 <= x < edges.shape[1] and 0 <= y < edges.shape[0]:  # 이미지 범위 내에 있는지 확인
+                    cv2.circle(edges, (int(x), int(y)), circle_radius, circle_color, circle_thickness)
+                    # 좌표 텍스트로 표시
+                    text = f"({int(x)}, {int(y)})"
+                    # 텍스트 위치 조정: 원의 중심에서 약간 위로 올립니다.
+                    text_position = (int(x) - 40, int(y) - 25)
+                    cv2.putText(edges, text, text_position, font, font_scale, font_color, font_thickness)
 
-                self.displayImage(qImg, edges)
+                # 결과 이미지 표시 (개발 환경에 따라 다를 수 있음)
+                # print(f'Largest Box ={len(unique_intersections)}')
+                # box_coordinates = self.create_box_from_points( averaged_points)
+                # print("Box Coordinates:")
+                # for coord in box_coordinates:
+                #     print(coord)
+
+                non_overlap_box  = self.find_non_overlapping_boxes(averaged_points)
+                print(f'non overlapped box count={len(non_overlap_box)}')
+                for box_coord in non_overlap_box:
+                    print(box_coord)
+
+                # calculator = BoxCalculator(non_overlap_box)
+                # height, width, depth = calculator.calculate_dimensions()
+                # print(f"Height: {height}, Width: {width}, Depth: {depth}")
+
+                pixImg = self.draw_boxes_on_image( qImg,non_overlap_box)
+                # self.save_boxes('./box_images',qImg,non_overlap_box)
+
+                self.displayImage(pixImg, edges)
             else:
                 print("이미지를 불러올 수 없습니다.")
 
-    def displayImage(self, qImg, edges):
+    def handle_click(self, x, y):
+        # 클릭된 좌표를 처리하는 함수
+        print(f"Clicked at pixmap coordinates: ({x}, {y})")
+
+    def displayImage(self, pixImg, edges):
         screenWidth = QApplication.desktop().screenGeometry().width()
         screenHeight = QApplication.desktop().screenGeometry().height()
 
@@ -268,8 +448,8 @@ class MainWindow(QMainWindow):
         maxDisplayHeight = screenHeight * 1  # 화면 높이의 80%
         
         # 원본 이미지와 마스크 이미지의 조정된 크기 계산
-        qImgWidth = qImg.width()
-        qImgHeight = qImg.height()
+        qImgWidth = pixImg.width()
+        qImgHeight = pixImg.height()
 
         # NumPy 배열의 너비와 높이를 얻습니다.
         edgesHeight, edgesWidth = edges.shape
@@ -290,8 +470,12 @@ class MainWindow(QMainWindow):
         self.imageWindow.setWindowTitle('Image and Mask Preview')
         layout = QHBoxLayout()
         
-        imgLabel = QLabel()
-        imgLabel.setPixmap(QPixmap.fromImage(qImg).scaled(newQImgWidth, newQImgHeight, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        # imgLabel = QLabel()
+        # edgesPixmap을 표시하는 라벨도 ClickableLabel로 만들어 클릭 가능하게 함
+        # 원본 이미지의 너비와 높이를 저장
+        imgLabel = ClickableLabel(qImgWidth, qImgHeight)
+        imgLabel.clicked.connect(self.handle_click)  # 클릭 시그널 연결
+        imgLabel.setPixmap(pixImg.scaled(newQImgWidth, newQImgHeight, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         layout.addWidget(imgLabel)
         
         maskImgLabel = QLabel()
@@ -301,7 +485,6 @@ class MainWindow(QMainWindow):
         self.imageWindow.setLayout(layout)
         self.imageWindow.setGeometry(100, 100, newQImgWidth + newMaskQImgWidth, max(newQImgHeight, newMaskQImgHeight))
         self.imageWindow.show()
-
 
 class GLWidget(QGLWidget):
     def __init__(self, mainWindow):
