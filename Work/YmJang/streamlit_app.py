@@ -187,28 +187,24 @@ def main():
             with col2:
                 # 이미지 회전 버튼
                 rotate_image = st.button("Rotate cropped image")
-
-            if rotate_image:
-                st.session_state.rotation_angle -= 90   # 회전 각도 업데이트
-                st.session_state.rotation_angle %= 360  # 360도가 되면 0으로 리셋
-                # 현재 회전 각도에 따라 이미지 회전
-            
-            st.session_state.canvas_image_data = st.session_state.canvas_image_data.rotate(
-                                                              st.session_state.rotation_angle,
-                                                              expand = True)
-
-            st.write("***_:blue[Preview Cropped Image]_***")
-            st.image(st.session_state.canvas_image_data)
-            st.session_state.anal_image = True
             if save_image:
                 save_name = save_image_to_folder(st.session_state.canvas_image_data)
                 # 저장된 이미지 리스트에 이미지 추가
                 st.session_state.saved_images.append(st.session_state.canvas_image_data)
                 st.session_state.images_list.append(save_name)
-                # st.session_state.rotation_angle = 0
-                # st.sidebar.write("Save image loading...........")
-                # # print('save_image:',st.session_state.anal_image)
+ 
+            if rotate_image:
+                st.session_state.rotation_angle += 90   # 회전 각도 업데이트
+                st.session_state.rotation_angle %= 360  # 360도가 되면 0으로 리셋
+                # 현재 회전 각도에 따라 이미지 회전
+            st.session_state.canvas_image_data = st.session_state.canvas_image_data.rotate(
+                                                              st.session_state.rotation_angle,
+                                                              expand = True)
+            # print(f"st.session_state.rotation_angle={st.session_state.rotation_angle}")
 
+            st.write("***_:blue[Preview Cropped Image]_***")
+            st.image(st.session_state.canvas_image_data)
+            st.session_state.anal_image = True
             # 저장된 이미지 썸네일을 횡으로 나열하여 표시
             if st.session_state.saved_images:
                 # 각 이미지를 작은 썸네일로 변환하여 표시
@@ -230,19 +226,32 @@ def main():
                 for idx, img_path in enumerate(st.session_state.images_list):
                     image = Image.open(img_path).convert('RGB')
                     processed_image = process_image_with_hsv_range(image, lower_hsv, upper_hsv)
+                    # 처리된 이미지를 저장합니다. 여기서는 리사이즈하지 않고 원본 크기를 유지합니다.
                     st.session_state.process_images.append(processed_image)
-                    # print(lower_hsv,upper_hsv)
-                    with cols[idx]:
-                        # 썸네일 크기로 이미지 리사이즈
-                        # st.caption(img_path)
-                        processed_image.thumbnail((200, 200))
-                        st.image(processed_image, width=100)  # 썸네일 이미지 표시
-                        if st.button(f'Zoom In {idx}', key=f"zoomin_{idx}"):
-                            # HTML 코드를 Streamlit에 삽입하여 'Zoom In' 버튼 생성
-                            st.image(st.session_state.process_images[idx],width=600)
-                        else:
-                            st.image(st.session_state.process_images[idx],width=5)
 
+                    # 확대 상태를 추적하기 위한 키를 생성합니다.
+                    zoom_key = f"zoom_{idx}"
+                    
+                    # session_state에 확대 상태를 저장할 변수가 없으면 초기화합니다.
+                    if zoom_key not in st.session_state:
+                        st.session_state[zoom_key] = False
+
+                    with cols[idx]:
+                        # 화면에 표시하기 위해 썸네일 이미지를 준비합니다.
+                        display_image = processed_image.copy()
+                        display_image.thumbnail((200, 200))
+                        st.image(display_image, width=100)  # 썸네일 이미지로 표시
+
+                        # 'Zoom In' 버튼 클릭 시 처리
+                        if st.button(f'Zoom In {idx}', key=f"zoomin_{idx}"):
+                            # 확대 상태를 토글합니다.
+                            st.session_state[zoom_key] = not st.session_state[zoom_key]
+                        
+                        # 확대 상태에 따라 이미지를 표시하거나 숨깁니다.
+                        if st.session_state[zoom_key]:
+                            st.image(st.session_state.process_images[idx], width=400)
+
+#########################################################################################################
 
     if process_lang:
         if not openai_api_key:

@@ -19,7 +19,7 @@ from langchain_community.vectorstores import FAISS
 import os 
 
 def is_vector_db(index_name="VECTOR_DB_INDEX"):
-    # 파일 이름을 경로와 함께 구성합니다. 현재 디렉토리를 기준으로 합니다.
+     # 파일 이름을 경로와 함께 구성합니다. 현재 디렉토리를 기준으로 합니다.
     # 파일 확장자는 일반적으로 '.index'입니다.
     index_path = f"./{index_name}"
 
