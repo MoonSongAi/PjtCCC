@@ -1,8 +1,14 @@
 # streamlit_app.py
 import os
 
+import numpy as np
 import streamlit as st
-from analysis_image import load_to_image, save_image_to_folder
+from analysis_image import (
+    get_image_base64,
+    load_to_image,
+    process_image_with_hsv_range,
+    save_image_to_folder,
+)
 from langchain.memory import StreamlitChatMessageHistory
 
 # from streamlit_chat import message
@@ -11,14 +17,49 @@ from langchain_integration import setup_langchain
 from PIL import Image
 from streamlit_cropper import st_cropper
 
+# from image_processing import process_image_with_hsv_range  # 함수 이름 변경 및 인자 추가
+
+
+# 이미지 삭제 함수
+def delete_image(image_index):
+    if 0 <= image_index < len(st.session_state.saved_images):
+        del st.session_state.saved_images[image_index]
+        del st.session_state.images_list[image_index]
+        # 이미지 리스트 변경 후 다시 이미지와 버튼 표시를 위해 페이지 갱신
+        if len(st.session_state.images_list) == 0:
+            st.session_state.anal_button_click = False
+        st.rerun()
+
 
 def main():
     st.set_page_config(page_title="표시 디자인", page_icon=":volcano:")
 
-    st.title("_표시 디자인 오류....?_ :red[QA Chat]_ :volcano:")
+    st.title("_표시 디자인 오류 탐색기..._ :red[QA Chat]_ :volcano:")
+    # 여기에 CSS 스타일을 추가
+    st.markdown(
+        """
+        <style>
+        /* 여기에 CSS 스타일을 추가 */
+        #tabs-bui3-tab-0>.st-emotion-cache-l9bjmx p,
+        #tabs-bui3-tab-1>.st-emotion-cache-l9bjmx p,
+        #tabs-bui3-tab-2>.st-emotion-cache-l9bjmx p{
+            /* 탭 아이템 스타일 변경 */
+            font-size:25px
+        }
+        .element-container iframe{
+                border:3px dashed black
+        }
+            
+        .st-emotion-cache-1kyxreq div{
+                border:3px dashed red
+        } 
+        </style>
+    """,
+        unsafe_allow_html=True,
+    )
 
     tab1, tab2, tab3 = st.tabs(
-        ["💫Image processing....", "🧑‍🚀chat.....", "🕵️‍♂️ chucked Data"]
+        ["💫Image processing....", "🧑‍🚀chat about Design....", "🕵️‍♂️ chucked Data"]
     )
 
     if "conversation" not in st.session_state:
@@ -37,21 +78,78 @@ def main():
         st.session_state.rotation_angle = 0
     if "saved_images" not in st.session_state:
         st.session_state.saved_images = []
+    if "process_images" not in st.session_state:
+        st.session_state.process_images = []
     if "images_list" not in st.session_state:
         st.session_state.images_list = []
     if "loaded_image" not in st.session_state:
         st.session_state.loaded_image = None
+    if "anal_image" not in st.session_state:
+        st.session_state.anal_image = False
+    if "anal_button_click" not in st.session_state:
+        st.session_state.anal_button_click = False
+    if "delete_request" not in st.session_state:
+        st.session_state.delete_request = False
 
     with st.sidebar:
+        with st.expander("Adjust HSV Threshold", expanded=False):
+            colors = ["Red", "Green", "Blue", "Yellow", "Black"]
+            default_color = "Black"  # 기본으로 선택하고 싶은 색상
+            default_index = colors.index(default_color)  # 'Black'의 인덱스 찾기
+            color_selection = st.selectbox(
+                "Select line color", colors, index=default_index
+            )
+            if color_selection == "Red":
+                lower = [0, 100, 100]
+                upper = [10, 255, 255]
+            elif color_selection == "Green":
+                lower = [40, 40, 40]
+                upper = [80, 255, 255]
+            elif color_selection == "Blue":
+                lower = [40, 40, 40]
+                upper = [80, 255, 255]
+            elif color_selection == "Green":
+                lower = [40, 40, 40]
+                upper = [80, 255, 255]
+            elif color_selection == "Black":
+                lower = [0, 0, 0]
+                upper = [180, 255, 50]
+            else:
+                lower = [0, 100, 100]
+                upper = [10, 255, 255]
+
+            lower_h = st.slider("Lower Hue", 0, 179, lower[0])
+            lower_s = st.slider("Lower Saturation", 0, 255, lower[1])
+            lower_v = st.slider("Lower Value", 0, 255, lower[2])
+            upper_h = st.slider("Upper Hue", 0, 179, upper[0])
+            upper_s = st.slider("Upper Saturation", 0, 255, upper[1])
+            upper_v = st.slider("Upper Value", 0, 255, upper[2])
+
+            lower_hsv = np.array([lower_h, lower_s, lower_v])
+            upper_hsv = np.array([upper_h, upper_s, upper_v])
+
         with st.expander("Select Image", expanded=True):
             uploaded_Image = st.file_uploader(
                 "Select target Image", type=["pdf", "png", "jpg"]
             )
             # 파일이 업로드 되었는지 확인하고 버튼의 활성화 상태 결정
-            button_enabled = uploaded_Image is not None
-            process_image = st.button(
-                "Analysis Design file....", disabled=not button_enabled
+            # pDF image 해상
+            pdf_value = st.slider(
+                label="PDF Resolution",  # 슬라이더 라벨
+                min_value=1,  # 최소값
+                max_value=10,  # 최대값
+                value=2,  # 기본값
+                step=1,  # 단계
             )
+            print("st.expander:", st.session_state.anal_image)
+
+            process_image = st.button(
+                "Analysis Design file....", disabled=not st.session_state.anal_image
+            )
+            if process_image:
+                st.session_state.anal_button_click = (
+                    True  # Button Click 을 session 동안 유지 하기위해서
+                )
 
         with st.expander("Setting for LangChain", expanded=False):
             uploaded_files = st.file_uploader(
@@ -93,17 +191,22 @@ def main():
             # 파일이 업로드 되었는지 확인하고 버튼의 활성화 상태 결정
             button_enabled = uploaded_files is not None and len(uploaded_files) > 0
             process_lang = st.button("Process....", disabled=not button_enabled)
+
     if uploaded_Image:
         if st.session_state.loaded_image != uploaded_Image:  # image가 변경되었다면
+            st.sidebar.write("New image loading...........")
             st.session_state.loaded_image = uploaded_Image
             st.session_state.saved_images = []
             st.session_state.images_list = []
+            st.session_state.process_images = []
+            del_buttons = []
+
+            st.session_state.anal_image = False
+
         with tab1:
-
-            img = load_to_image(uploaded_Image)
-
+            img = load_to_image(uploaded_Image, pdf_value)
             cropped_img = st_cropper(
-                img, realtime_update=True, box_color="#0000FF", aspect_ratio=(1, 1)
+                img, realtime_update=True, box_color="#FF0000", aspect_ratio=(1, 1)
             )
 
             # Manipulate cropped image at will
@@ -117,26 +220,27 @@ def main():
                 save_image = st.button("Save cropped image")
             with col2:
                 # 이미지 회전 버튼
-                rotate_image = st.button("Rotate")
-            if rotate_image:
-                st.session_state.rotation_angle += 90  # 회전 각도 업데이트
-                st.session_state.rotation_angle %= 360  # 360도가 되면 0으로 리셋
-                # 현재 회전 각도에 따라 이미지 회전
-
-            st.session_state.canvas_image_data = (
-                st.session_state.canvas_image_data.rotate(
-                    st.session_state.rotation_angle, expand=True
-                )
-            )
-
-            st.write("Cropped Image Preview")
-            st.image(st.session_state.canvas_image_data)
+                rotate_image = st.button("Rotate cropped image")
             if save_image:
                 save_name = save_image_to_folder(st.session_state.canvas_image_data)
                 # 저장된 이미지 리스트에 이미지 추가
                 st.session_state.saved_images.append(st.session_state.canvas_image_data)
                 st.session_state.images_list.append(save_name)
-                st.session_state.rotation_angle = 0
+
+            if rotate_image:
+                st.session_state.rotation_angle += 90  # 회전 각도 업데이트
+                st.session_state.rotation_angle %= 360  # 360도가 되면 0으로 리셋
+                # 현재 회전 각도에 따라 이미지 회전
+            st.session_state.canvas_image_data = (
+                st.session_state.canvas_image_data.rotate(
+                    st.session_state.rotation_angle, expand=True
+                )
+            )
+            # print(f"st.session_state.rotation_angle={st.session_state.rotation_angle}")
+
+            st.write("***_:blue[Preview Cropped Image]_***")
+            st.image(st.session_state.canvas_image_data)
+            st.session_state.anal_image = True
             # 저장된 이미지 썸네일을 횡으로 나열하여 표시
             if st.session_state.saved_images:
                 # 각 이미지를 작은 썸네일로 변환하여 표시
@@ -147,6 +251,47 @@ def main():
                         st.caption(st.session_state.images_list[idx])
                         saved_image.thumbnail((200, 200))
                         st.image(saved_image, width=100)  # 썸네일 이미지 표시
+                        # 삭제 버튼 생성
+                        if st.button(f"Delete {idx}", key=f"delete_{idx}"):
+                            st.session_state.delete_request = True
+                            delete_image(
+                                idx
+                            )  # 삭제 버튼이 클릭되면, 해당 이미지를 삭제하기 위한 플래그 설정
+
+            if st.session_state.anal_button_click:
+                # 선택된 이미지 이름으로 실제 이미지 객체를 얻음
+                cols = st.columns(len(st.session_state.images_list))
+                for idx, img_path in enumerate(st.session_state.images_list):
+                    image = Image.open(img_path).convert("RGB")
+                    processed_image = process_image_with_hsv_range(
+                        image, lower_hsv, upper_hsv
+                    )
+                    # 처리된 이미지를 저장합니다. 여기서는 리사이즈하지 않고 원본 크기를 유지합니다.
+                    st.session_state.process_images.append(processed_image)
+
+                    # 확대 상태를 추적하기 위한 키를 생성합니다.
+                    zoom_key = f"zoom_{idx}"
+
+                    # session_state에 확대 상태를 저장할 변수가 없으면 초기화합니다.
+                    if zoom_key not in st.session_state:
+                        st.session_state[zoom_key] = False
+
+                    with cols[idx]:
+                        # 화면에 표시하기 위해 썸네일 이미지를 준비합니다.
+                        display_image = processed_image.copy()
+                        display_image.thumbnail((200, 200))
+                        st.image(display_image, width=100)  # 썸네일 이미지로 표시
+
+                        # 'Zoom In' 버튼 클릭 시 처리
+                        if st.button(f"Zoom In {idx}", key=f"zoomin_{idx}"):
+                            # 확대 상태를 토글합니다.
+                            st.session_state[zoom_key] = not st.session_state[zoom_key]
+
+                        # 확대 상태에 따라 이미지를 표시하거나 숨깁니다.
+                        if st.session_state[zoom_key]:
+                            st.image(st.session_state.process_images[idx], width=400)
+
+    #########################################################################################################
 
     if process_lang:
         if not openai_api_key:
@@ -194,6 +339,9 @@ def main():
 
         with tab2.chat_message("assistant"):
             chain = st.session_state.conversation
+            if chain is None:
+                st.warning("학습된 정보가 없습니다.")
+                st.stop()
 
             with st.spinner("Thinking..."):
                 result = chain({"question": query})
