@@ -1,0 +1,13 @@
+names:
+- bold
+- normal
+nc: 2
+roboflow:
+  license: CC BY 4.0
+  project: blackboard-bold_project
+  url: https://universe.roboflow.com/sessac/blackboard-bold_project/dataset/3
+  version: 3
+  workspace: sessac
+test: ../test/images
+train: blackboard-bold_project-3/train/images
+val: blackboard-bold_project-3/valid/images

@@ -2,7 +2,7 @@ from roboflow import Roboflow
 import yaml
 from PIL import Image
 
-rf = Roboflow(api_key="s1ydUhtNRaBVlGnU4lr0")
+rf = Roboflow(api_key="API")
 project = rf.workspace("sessac").project("project_object-igclo")
 version = project.version(4)
 dataset = version.download("yolov5")
