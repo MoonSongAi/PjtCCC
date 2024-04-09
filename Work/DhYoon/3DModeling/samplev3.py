@@ -9,7 +9,7 @@ import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from PIL import Image
-from PyQt5.QtCore import QPoint, Qt ,pyqtSignal
+from PyQt5.QtCore import QPoint, Qt ,pyqtSignal, QTimer 
 from PyQt5.QtOpenGL import QGLWidget
 from PyQt5.QtWidgets import (
     QApplication,
@@ -22,9 +22,37 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from PyQt5.QtGui import QImage, QPixmap, QPainter, QPen, QColor
-class ClickableLabel(QLabel):
-    clicked = pyqtSignal(int, int)  # 사용자 정의 시그널, 클릭된 좌표를 전달합니다.
+from PyQt5.QtGui import QImage, QPixmap, QPainter, QPen, QColor,QCursor
+
+# 모듈 최상단에 전역 변수 정의
+faceKeywords = {
+    "앞면": 0,
+    "우측면": 1,
+    "뒷면": 2,
+    "좌측면": 3,
+    "상단면": 4,
+    "하단면": 5,
+}
+class PopupLabel(QLabel):
+    def __init__(self, parent=None):
+        super(PopupLabel, self).__init__(parent)
+        self.setStyleSheet("background-color: white; border: 1px solid black; padding: 2px;")
+        self.adjustSize()
+        self.setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+
+    def showWithTimeout(self, text, pos, timeout=1000):
+        self.setText(text)
+        self.adjustSize()
+        # 전역 좌표를 위젯의 좌표계로 변환
+        localPos = self.parent().mapFromGlobal(pos)
+        # 팝업 위치 조정
+        self.move(localPos + QPoint(10, -10))  # 예시로 10, -10 만큼 오프셋 추가
+        self.show()
+        QTimer.singleShot(timeout, self.close)
+
+class ClickableLabel(QLabel): 
+    clicked = pyqtSignal(int , int , str)  # 사용자 정의 시그널, 클릭된 좌표와 클릭된 버튼("left" 또는 "right")을 전달합니다.
 
     def __init__(self, original_width, original_height, *args, **kwargs):
         super(ClickableLabel, self).__init__(*args, **kwargs)
@@ -40,8 +68,15 @@ class ClickableLabel(QLabel):
         original_x = event.pos().x() / scale_width
         original_y = event.pos().y() / scale_height
 
+        # 클릭된 마우스 버튼 확인
+        button_clicked = ""
+        if event.button() == Qt.LeftButton:
+            button_clicked = "left"
+        elif event.button() == Qt.RightButton:
+            button_clicked = "right"
+
         # 사용자 정의 시그널을 발생시켜 MainWindow에 클릭 좌표 전달
-        self.clicked.emit(int(original_x), int(original_y))
+        self.clicked.emit(int(original_x)+2, int(original_y)+2 , button_clicked)
 
 class BoxCalculator:
     def __init__(self, boxes):
@@ -90,7 +125,18 @@ class MainWindow(QMainWindow):
         self.imagePaths = [None] * 6
         self.initUI()
         self.imageWindow = None  # imageWindow를 저장하기 위한 클래스 변수 추가
+        self.imgLabel  = None # 기존 위젯 제거
+        self.maskImgLabel = None
+        self.lastWindowPos = None  # 창의 마지막 위치를 저장할 변수
 
+        self.selLines = []
+        self.interSections =[]
+        self.mskEdges = None  # msk_edges를 저장할 속성
+        self.qImage = None  # QImage 객체
+
+        self.click_count = 0
+        self.faceBoxes = None # 유니크한 박스 저장
+        
 
     def initUI(self):
         self.centralWidget = QWidget(self)
@@ -136,14 +182,6 @@ class MainWindow(QMainWindow):
         if not imagePaths:
             return
 
-        faceKeywords = {
-            "뒷면": 0,
-            "좌측면": 1,
-            "앞면": 2,
-            "우측면": 3,
-            "하단면": 4,
-            "상단면": 5,
-        }
 
         for imagePath in imagePaths:
             fileName = os.path.basename(imagePath)
@@ -225,6 +263,7 @@ class MainWindow(QMainWindow):
         averaged_points = [(x_means[x], y_means[y]) for x, y in points]
 
         return averaged_points
+    
     def create_box_from_points(self, points):
         # x 좌표와 y 좌표를 분리하여 각각의 리스트를 생성합니다.
         x_coords, y_coords = zip(*points)
@@ -320,7 +359,76 @@ class MainWindow(QMainWindow):
             # QPixmap을 이미지 파일로 저장
             filename = os.path.join(save_path, f'cropped_box_{index}.jpg')
             cropped_pixmap.save(filename, 'JPG')
+
+    def detect_edges_in_hsv_range(self, img_color, lower_hsv, upper_hsv, \
+                                  canny_threshold1=50, canny_threshold2=150, \
+                                  hough_threshold=110, min_line_length=80, max_line_gap=150):
+        # OpenCV 이미지를 HSV 색공간으로 변환
+        img_hsv = cv2.cvtColor(img_color, cv2.COLOR_BGR2HSV)
+        # 주어진 HSV 범위 내의 마스크 생성
+        img_mask = cv2.inRange(img_hsv, lower_hsv, upper_hsv)
         
+        # img_mask 이미지를 QImage로 변환
+        maskQImg = QImage(img_mask.data, img_mask.shape[1], img_mask.shape[0], img_mask.shape[1], QImage.Format_Grayscale8)
+
+        # QImage를 NumPy 배열로 변환
+        ptr = maskQImg.bits()
+        ptr.setsize(maskQImg.byteCount())
+        bytes_per_line = maskQImg.bytesPerLine()
+        # QImage가 8비트 그레이스케일 이미지라면 한 픽셀당 바이트 수는 1이 됩니다.
+        mask_array = np.frombuffer(ptr, dtype=np.uint8).reshape((maskQImg.height(), bytes_per_line))
+
+        # Canny 엣지 검출
+        edges = cv2.Canny(mask_array, canny_threshold1, canny_threshold2)
+        
+        # Hough 변환을 사용한 선 검출
+        lines = cv2.HoughLinesP(edges, 1, np.pi / 180, hough_threshold, minLineLength=min_line_length, maxLineGap=max_line_gap)
+        
+        # 90도로 꺾이는 선의 위치 찾기
+        if lines  is None:
+            print('==== 검출된 line이 없습니다. =============')
+            return edges
+
+        sel_lines = []
+        for line in lines:
+            x1, y1, x2, y2 = line[0]
+            theta = np.arctan2(y2 - y1, x2 - x1) * 180 / np.pi
+            # 각도가 90도 내외인 경우에만 출력 (각도 허용 오차 고려)
+            if abs(theta) < 92 and abs(theta) > 88:
+                cv2.line(edges, (x1, y1), (x2, y2), (255, 0, 0), 4)
+                sel_lines.append((x1,y1,x2,y2))
+                # print(f'{i} 2theta={theta} x1, y1, x2, y2 = {x1} {y1} {x2} {y2}')
+            # 각도가 수평선
+            if abs(theta) < 2 or abs(theta-180) < 2 or abs(theta-90) < 2:
+            # if abs(theta) < 2 or abs(theta-180) < 2 or abs(theta-90) < 2:
+                cv2.line(edges, (x1, y1), (x2, y2), (255, 0, 0), 4)
+                sel_lines.append((x1,y1,x2,y2))
+                # print(f'{i} 2theta={theta} x1, y1, x2, y2 = {x1} {y1} {x2} {y2}')
+
+        self.selLines =sel_lines #class 변수로
+
+        return edges
+
+    def draw_points_with_text(self, edges, points):
+        cp_edges = edges.copy() # 원본 변경을 피하기 위해
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 1.5
+        font_color = (255, 0, 0)  
+        font_thickness = 2
+        circle_radius = 20
+        circle_color = (255, 0, 0)  
+        circle_thickness = -1  # 원 안을 채움
+
+        for point in points:
+            x, y = point
+            # 이미지에 원 그리기
+            cv2.circle(cp_edges, (int(x), int(y)), circle_radius, circle_color, circle_thickness)
+            # 좌표 텍스트로 표시
+            text = f"({int(x)}, {int(y)})"
+            # 텍스트 위치 조정: 원의 중심에서 약간 위로 올립니다.
+            text_position = (int(x) - 40, int(y) - 25)
+            cv2.putText(cp_edges, text, text_position, font, font_scale, font_color, font_thickness)
+        return cp_edges
 
     def loadImage(self):
         filePath, _ = QFileDialog.getOpenFileName(self, "Select Image", "", "Image Files (*.png *.jpg *.jpeg *.bmp *.gif)")
@@ -331,95 +439,43 @@ class MainWindow(QMainWindow):
                 img_color_rgb = cv2.cvtColor(img_color, cv2.COLOR_BGR2RGB) 
                 bytesPerLine = 3 * img_color_rgb.shape[1]
                 qImg = QImage(img_color_rgb.data, img_color_rgb.shape[1], img_color_rgb.shape[0], bytesPerLine, QImage.Format_RGB888)
+                self.qImage = qImg        #class 변수 저장
 
+                canny_threshold1=50
+                canny_threshold2=150
+                hough_threshold=110 
+                min_line_length=80 
+                max_line_gap=150
 
-                # lower_black = (0, 0, 0)
-                # upper_black = (180, 255, 60)
-                # img_mask = cv2.inRange(img_hsv, lower_black, upper_black)
-
-                img_hsv = cv2.cvtColor(img_color, cv2.COLOR_BGR2HSV)
-                # 회색색의 HSV 범위 정의 ccc.jpg
-                lower_gray = (79, 215, 18)
-                upper_gray = (99, 255, 118)
-                img_mask = cv2.inRange(img_hsv, lower_gray, upper_gray)
                 # 핑크색의 HSV 범위 정의 aaa.jpg
-                # lower_pink = (140, 100, 100)
-                # upper_pink = (160, 255, 255)
-                # img_mask = cv2.inRange(img_hsv, lower_pink, upper_pink)
+                # lower_hsv = (140, 100, 100)
+                # upper_hsv = (160, 255, 255)
                 # 연녹색 HSV 범위 정의 bbb.jpg
-                # lower_yellow = (6, 109,210)   # Hue 15, Saturation 100, Value 100
-                # upper_yellow = (26, 189, 255)   # Hue 30, Saturation 255, Value 255
-                # img_mask = cv2.inRange(img_hsv, lower_yellow, upper_yellow)
-
-
-                # img_mask 이미지를 QImage로 변환할 때 bytesPerLine 지정
-                maskQImg = QImage(img_mask.data, img_mask.shape[1], img_mask.shape[0], img_mask.shape[1], QImage.Format_Grayscale8)
-                # maskQImg가 이미 그레이스케일 이미지의 QImage 객체라고 가정합니다.
-                # QImage를 NumPy 배열로 변환합니다.
-                ptr = maskQImg.bits()
-                ptr.setsize(maskQImg.byteCount())
-                # QImage 형식에 맞는 바이트 수를 얻습니다.
-                bytes_per_line = maskQImg.bytesPerLine()
-                # 데이터를 NumPy 배열로 변환합니다.
-                # QImage가 8비트 그레이스케일 이미지라면 한 픽셀당 바이트 수는 1이 됩니다.
-                mask_array = np.frombuffer(ptr, dtype=np.uint8).reshape((maskQImg.height(), bytes_per_line))
-                # Canny 엣지 검출 사용
-                edges = cv2.Canny(mask_array, threshold1=50, threshold2=150)
-
-                # Hough 변환을 사용하여 선 검출
-                lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=110, minLineLength=80, maxLineGap=150)
-
-                # 90도로 꺾이는 선의 위치 찾기
-                sel_lines = []
-                i = 0
-                for line in lines:
-                    x1, y1, x2, y2 = line[0]
-                    theta = np.arctan2(y2 - y1, x2 - x1) * 180 / np.pi
-                    # 각도가 90도 내외인 경우에만 출력 (각도 허용 오차 고려)
-                    if abs(theta) < 92 and abs(theta) > 88:
-                        cv2.line(edges, (x1, y1), (x2, y2), (255, 0, 0), 4)
-                        sel_lines.append((x1,y1,x2,y2))
-                        # print(f'{i} 2theta={theta} x1, y1, x2, y2 = {x1} {y1} {x2} {y2}')
-                    # 각도가 수평선
-                    if abs(theta) < 2 or abs(theta-180) < 2 or abs(theta-90) < 2:
-                    # if abs(theta) < 2 or abs(theta-180) < 2 or abs(theta-90) < 2:
-                        cv2.line(edges, (x1, y1), (x2, y2), (255, 0, 0), 4)
-                        sel_lines.append((x1,y1,x2,y2))
-                        # print(f'{i} 2theta={theta} x1, y1, x2, y2 = {x1} {y1} {x2} {y2}')
+                # lower_hsv = (6, 109,210)   # Hue , Saturation , Value
+                # upper_hsv = (26, 189, 255)  
+                # 회색색의 HSV 범위 정의 ccc.jpg
+                lower_hsv = (79, 215, 18)
+                upper_hsv = (99, 255, 118)
+                msk_edges = self.detect_edges_in_hsv_range(img_color, lower_hsv, upper_hsv, 
+                                                       canny_threshold1, canny_threshold2, 
+                                                       hough_threshold, min_line_length, max_line_gap)
+                if self.selLines == []:
+                    return
                 
+                self.mskEdges = msk_edges      # class 변수저장 원본 저장
 
-                intersections = self.get_intersections(sel_lines)
+                intersections = self.get_intersections(self.selLines)
+                self.interSections = intersections        #class 변수 저장
                 # 교차점 리스트에서 중복 또는 비슷한 위치 제거
                 unique_intersections = self.remove_near_duplicates(intersections , 12)
                 # 이미지에 교차점을 그림
                 averaged_points = self.average_within_tolerance( unique_intersections, 12)
                 # print(averaged_points)
 
-                font = cv2.FONT_HERSHEY_SIMPLEX
-                font_scale = 1.5
-                font_color = (255, 0, 0) # 노란색
-                font_thickness = 2
-                circle_radius = 20
-                circle_color = (255, 0, 0) # 빨간색
-                circle_thickness = -1 # 원 안을 채움
-                for point in averaged_points:
-                    x, y = point
-                   # if 0 <= x < edges.shape[1] and 0 <= y < edges.shape[0]:  # 이미지 범위 내에 있는지 확인
-                    cv2.circle(edges, (int(x), int(y)), circle_radius, circle_color, circle_thickness)
-                    # 좌표 텍스트로 표시
-                    text = f"({int(x)}, {int(y)})"
-                    # 텍스트 위치 조정: 원의 중심에서 약간 위로 올립니다.
-                    text_position = (int(x) - 40, int(y) - 25)
-                    cv2.putText(edges, text, text_position, font, font_scale, font_color, font_thickness)
-
-                # 결과 이미지 표시 (개발 환경에 따라 다를 수 있음)
-                # print(f'Largest Box ={len(unique_intersections)}')
-                # box_coordinates = self.create_box_from_points( averaged_points)
-                # print("Box Coordinates:")
-                # for coord in box_coordinates:
-                #     print(coord)
+                text_edges = self.draw_points_with_text(self.mskEdges, averaged_points)
 
                 non_overlap_box  = self.find_non_overlapping_boxes(averaged_points)
+                self.faceBoxes = non_overlap_box  # class 변수에 저장
                 print(f'non overlapped box count={len(non_overlap_box)}')
                 for box_coord in non_overlap_box:
                     print(box_coord)
@@ -431,13 +487,135 @@ class MainWindow(QMainWindow):
                 pixImg = self.draw_boxes_on_image( qImg,non_overlap_box)
                 # self.save_boxes('./box_images',qImg,non_overlap_box)
 
-                self.displayImage(pixImg, edges)
+                self.displayImage(pixImg, text_edges)
             else:
                 print("이미지를 불러올 수 없습니다.")
 
-    def handle_click(self, x, y):
-        # 클릭된 좌표를 처리하는 함수
-        print(f"Clicked at pixmap coordinates: ({x}, {y})")
+    def update_image_display(self):
+        if self.mskEdges is None:
+            print("이미지 또는 msk_edges가 로드되지 않았습니다.")
+            return
+
+        unique_intersections = self.remove_near_duplicates(self.interSections , 12)
+                # 이미지에 교차점을 그림
+        averaged_points = self.average_within_tolerance( unique_intersections, 12)
+                # print(averaged_points)
+
+        text_edges = self.draw_points_with_text(self.mskEdges, averaged_points)
+        non_overlap_box = self.find_non_overlapping_boxes(averaged_points)
+        self.faceBoxes = non_overlap_box  # class 변수에 저장
+        print(f'non overlapped box count={len(non_overlap_box)}')
+
+        pixImg = self.draw_boxes_on_image(self.qImage, non_overlap_box)
+        self.update_displayImage(pixImg, text_edges)
+
+    def update_displayImage(self,pixImg, text_edges):
+        screenWidth = QApplication.desktop().screenGeometry().width()
+        screenHeight = QApplication.desktop().screenGeometry().height()
+
+        # 이미지 크기 조정을 위한 최대 크기 설정
+        maxDisplayWidth = screenWidth * 1  # 화면 너비의 100%
+        maxDisplayHeight = screenHeight * 1  # 화면 높이의 100%
+        
+        # 원본 이미지와 마스크 이미지의 조정된 크기 계산
+        qImgWidth = pixImg.width()
+        qImgHeight = pixImg.height()
+
+        # NumPy 배열의 너비와 높이를 얻습니다.
+        edgesHeight, edgesWidth = text_edges.shape
+        bytesPerLine = edgesWidth
+        edgesQImg = QImage(text_edges.data, edgesWidth, edgesHeight, bytesPerLine, QImage.Format_Grayscale8)
+        # QImage로 변환된 edgesQImg를 QPixmap으로 변환
+        edgesPixmap = QPixmap.fromImage(edgesQImg)
+
+        # 최대 표시 크기에 맞춰 이미지 크기 조정
+        ratio = min(maxDisplayWidth / (qImgWidth + edgesWidth), maxDisplayHeight / max(qImgHeight, edgesHeight))
+        newQImgWidth = int(qImgWidth * ratio)
+        newQImgHeight = int(qImgHeight * ratio)
+        newMaskQImgWidth = int(edgesWidth * ratio)
+        newMaskQImgHeight = int(edgesHeight * ratio)
+        
+
+        # QLabel에 새로운 QPixmap 설정
+        self.imgLabel.setPixmap(pixImg.scaled(newQImgWidth, newQImgHeight, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        self.maskImgLabel.setPixmap(edgesPixmap.scaled(newMaskQImgWidth, newMaskQImgHeight, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+
+        # 화면 갱신
+        self.imgLabel.update()
+        self.maskImgLabel.update()
+
+    def toggle_point_in_list(self, x, y):
+        circle_radius = 20
+        point_found = None
+
+        # 리스트에 존재하는 각 좌표와의 거리를 계산하여 circle_radius 범위 내에 있는지 확인
+        for existing_point in self.interSections:
+            distance = np.sqrt((existing_point[0] - x) ** 2 + (existing_point[1] - y) ** 2)
+            if distance <= circle_radius:
+                point_found = existing_point
+                break
+
+        if point_found:
+            # 범위 내에 좌표가 존재하면 해당 좌표 제거
+            self.interSections.remove(point_found)
+            print(f"Point {point_found} removed from the list.")
+        else:
+            # 범위 내에 좌표가 존재하지 않으면 좌표 추가
+            self.interSections.append((x, y))
+            print(f"Point ({x}, {y}) added to the list.")
+    def show_click_count(self,globalX, globalY):
+        self.click_count %= 6
+        faceName = [name for name, index in faceKeywords.items() if index == self.click_count ][0]
+        self.click_count += 1
+         # 팝업 예시 사용
+        popup = PopupLabel(self)
+        popup_width, popup_height = popup.sizeHint().width(), popup.sizeHint().height()
+
+        # 클릭된 위치의 바로 위 중앙에 팝업을 표시하기 위한 위치 계산
+        popup_x = globalX - popup_width // 2
+        popup_y = globalY - popup_height
+
+        # 전역 좌표를 위젯의 좌표계로 변환
+        localPos = self.mapFromGlobal(QPoint(popup_x, popup_y))
+        # 팝업 위치 설정
+        popup.showWithTimeout(faceName, localPos)
+        popup.move(popup_x, popup_y)
+
+        find_box = self.find_box_containing_point(self.faceBoxes, localPos.x(), localPos.y())
+        if find_box is not None:
+            print(find_box)
+        else:
+            print('Mot found')
+
+    def find_box_containing_point(self, boxes, globalX, globalY):
+        # 박스 리스트에서 각 박스를 순회하며 좌표 검사
+        for box in boxes:
+            topLeft, bottomRight = box
+            topLeftX, topLeftY = topLeft
+            bottomRightX, bottomRightY = bottomRight
+
+            print(topLeft,bottomRight,globalX, globalY)
+            
+            # 전역 좌표를 위젯의 좌표계로 변환
+            localPos = self.mapFromGlobal(QPoint(globalX, globalY))
+            x, y = localPos.x(), localPos.y()
+            
+            # 좌표가 박스 내에 있는지 확인
+            if topLeftX <= x <= bottomRightX and topLeftY <= y <= bottomRightY:
+                return box  # 해당 박스 반환
+        return None  # 좌표가 어떤 박스에도 속하지 않는 경우
+    
+    def handle_click(self, x, y,button_clicked):
+       # 클릭된 좌표와 마우스 버튼 정보 처리
+        if button_clicked == "left":
+            self.toggle_point_in_list(x, y)
+            self.update_image_display()
+        elif button_clicked == "right":
+            print(f"Right button clicked at: ({x}, {y})")
+            globalPos = QCursor.pos()
+            self.show_click_count(globalPos.x(), globalPos.y())
+        else:
+            print(f"Clicked at: ({x}, {y}) without recognized button")
 
     def displayImage(self, pixImg, edges):
         screenWidth = QApplication.desktop().screenGeometry().width()
@@ -465,24 +643,32 @@ class MainWindow(QMainWindow):
         newMaskQImgWidth = int(edgesWidth * ratio)
         newMaskQImgHeight = int(edgesHeight * ratio)
         
-        # 조정된 크기로 이미지 표시
-        self.imageWindow = QWidget()
-        self.imageWindow.setWindowTitle('Image and Mask Preview')
-        layout = QHBoxLayout()
+        # imageWindow가 이미 존재하는지 확인
+        if self.imageWindow is None:
+            self.imageWindow = QWidget()
+            self.imageWindow.setWindowTitle('Image and Mask Preview')
+            self.layout = QHBoxLayout(self.imageWindow)
+        else:
+            self.layout.removeWidget(self.imgLabel)  # 기존 위젯 제거
+            self.layout.removeWidget(self.maskImgLabel)
+
+
         
         # imgLabel = QLabel()
         # edgesPixmap을 표시하는 라벨도 ClickableLabel로 만들어 클릭 가능하게 함
         # 원본 이미지의 너비와 높이를 저장
-        imgLabel = ClickableLabel(qImgWidth, qImgHeight)
-        imgLabel.clicked.connect(self.handle_click)  # 클릭 시그널 연결
-        imgLabel.setPixmap(pixImg.scaled(newQImgWidth, newQImgHeight, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-        layout.addWidget(imgLabel)
+        self.imgLabel = ClickableLabel(qImgWidth, qImgHeight)
+        self.imgLabel.clicked.connect(self.handle_click)  # 클릭 시그널 연결
+        self.imgLabel.setPixmap(pixImg.scaled(newQImgWidth, newQImgHeight, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        self.layout.addWidget(self.imgLabel)
         
-        maskImgLabel = QLabel()
-        maskImgLabel.setPixmap(edgesPixmap.scaled(newMaskQImgWidth, newMaskQImgHeight, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-        layout.addWidget(maskImgLabel)
+        self.maskImgLabel = QLabel()
+        # maskImgLabel = ClickableLabel(edgesWidth, edgesHeight)
+        # maskImgLabel.clicked.connect(self.handle_click)  # 클릭 시그널 연결
+        self.maskImgLabel.setPixmap(edgesPixmap.scaled(newMaskQImgWidth, newMaskQImgHeight, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        self.layout.addWidget(self.maskImgLabel)
         
-        self.imageWindow.setLayout(layout)
+        self.imageWindow.setLayout(self.layout)
         self.imageWindow.setGeometry(100, 100, newQImgWidth + newMaskQImgWidth, max(newQImgHeight, newMaskQImgHeight))
         self.imageWindow.show()
 
