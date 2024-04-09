@@ -82,3 +82,10 @@ yarl==1.9.4
 
 # 03/29
 opencv-python
+
+# 04/08
+google-api-core==2.18.0
+google-auth==2.29.0
+google-cloud-vision==3.7.2
+googleapis-common-protos==1.63.0
+matplotlib==3.8.3
