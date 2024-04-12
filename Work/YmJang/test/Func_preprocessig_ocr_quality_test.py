@@ -1,4 +1,3 @@
-# text_detection_comparison.py
 import io
 import os
 from google.cloud import vision
@@ -63,3 +62,23 @@ class TextDetectionAndComparison:
             return "두 번째 텍스트가 더 우월합니다."
         else:
             return "두 텍스트의 우월함을 결정할 수 없습니다."
+
+# Usage example:
+# Initialize the class with the path to your Google Cloud credentials
+detector = TextDetectionAndComparison("C:\\keys\\feisty-audio-420101-460dfe33e2cb.json")
+
+# 스크립트 파일의 디렉토리로 작업 디렉토리 변경
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+# Detect text from two images
+text1 = detector.detect_text("image.jpg")
+text2 = detector.detect_text("images.png")
+
+# Compare the texts to determine which is superior
+result = detector.determine_superior_text(text1, text2)
+
+print(text1)
+print('-'*20)
+print(text2)
+print('-'*20)
+print(result)
