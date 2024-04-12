@@ -33,146 +33,10 @@ from PyQt5.QtGui import (
     QCursor,
      
 )
-
+from extend_class import *
+from glWidget import *
 # 모듈 최상단에 전역 변수 정의
-faceKeywords = {
-    "앞면": 0,
-    "우측면": 1,
-    "뒷면": 2,
-    "좌측면": 3,
-    "하단면": 4,
-    "상단면": 5,
-}
-
-g_image_filder = './box_images/'
-
-class PopupLabel(QLabel):
-    def __init__(self, parent=None):
-        super(PopupLabel, self).__init__(parent)
-        self.setStyleSheet("background-color: white; border: 1px solid black; padding: 2px;")
-        self.adjustSize()
-        self.setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
-        self.setAttribute(Qt.WA_TranslucentBackground)
-
-    def showWithTimeout(self, text, pos, timeout=1000):
-        self.setText(text)
-        self.adjustSize()
-        # 전역 좌표를 위젯의 좌표계로 변환
-        localPos = self.parent().mapFromGlobal(pos)
-        # 팝업 위치 조정
-        self.move(localPos + QPoint(10, -10))  # 예시로 10, -10 만큼 오프셋 추가
-        self.show()
-        QTimer.singleShot(timeout, self.close)
-
-class ClickableLabel(QLabel): 
-    clicked = pyqtSignal(int , int , str)  # 사용자 정의 시그널, 클릭된 좌표와 클릭된 버튼("left" 또는 "right")을 전달합니다.
-    def __init__(self, original_width, original_height, *args, **kwargs):
-        super(ClickableLabel, self).__init__(*args, **kwargs)
-        self.original_width = original_width
-        self.original_height = original_height
-        self.setMouseTracking(True)  # 마우스 추적 활성화
-        self.crosshairPosition = None  # 십자선 위치 초기화
-
-    def mousePressEvent(self, event):
-        # QLabel의 현재 크기에 맞는 스케일 비율을 계산
-        scale_width = self.width() / self.original_width
-        scale_height = self.height() / self.original_height
-
-        # 클릭 좌표를 원본 QPixmap 상의 좌표로 변환
-        original_x = event.pos().x() / scale_width
-        original_y = event.pos().y() / scale_height
-
-        # 클릭된 마우스 버튼 확인
-        button_clicked = ""
-        if event.button() == Qt.LeftButton:
-            button_clicked = "left"
-        elif event.button() == Qt.RightButton:
-            button_clicked = "right"
-
-        # 사용자 정의 시그널을 발생시켜 MainWindow에 클릭 좌표 전달
-        self.clicked.emit(int(original_x)+2, int(original_y)+2 , button_clicked)
-
-    def mouseMoveEvent(self, event):
-        # QLabel의 현재 크기에 맞는 스케일 비율을 계산
-        scale_width = self.width() / self.original_width
-        scale_height = self.height() / self.original_height
-
-        # 클릭 좌표를 원본 QPixmap 상의 좌표로 변환
-        original_x = event.pos().x() / scale_width
-        original_y = event.pos().y() / scale_height
-
-        # 십자선 위치 업데이트
-        self.crosshairPosition = QPoint(int(original_x), int(original_y))
-        self.update()  # 화면 갱신 요청
-
-        tooltipText = f"Mouse at: ({int(original_x)}, {int(original_y)})"
-        QToolTip.showText(event.globalPos(), tooltipText, self)
-
-    def paintEvent(self, event):
-        super(ClickableLabel, self).paintEvent(event)
-        if self.crosshairPosition:
-            painter = QPainter(self)
-            pen = QPen(QColor(0, 0, 0), 2, Qt.DotLine)  # 검은색, 점선 스타일
-            painter.setPen(pen)
-            # 스케일 비율 계산
-            scale_width = self.width() / self.original_width
-            scale_height = self.height() / self.original_height
-             # 스케일링된 십자선 위치 계산
-            x = int(self.crosshairPosition.x() * scale_width)
-            y = int(self.crosshairPosition.y() * scale_height)
-            # 십자선 그리기
-            painter.drawLine(0, y, self.width(), y)  # 가로선
-            painter.drawLine(x, 0, x, self.height())  # 세로선
-
-class BoxCalculator:
-    def __init__(self, boxes):
-        self.boxes = boxes
-    
-    def calculate_dimensions(self):
-        # 가장 넓은 박스 찾기
-        front_box, max_area = self.find_largest_box()
-
-        # "앞면" 박스의 가로와 세로 길이를 계산
-        front_width = front_box[1][0] - front_box[0][0]
-        front_height = front_box[1][1] - front_box[0][1]
-
-        # 앞면 중 가장 긴 쪽을 높이로 정하고 나머지를 가로로 정함
-        height, width = max(front_width, front_height), min(front_width, front_height)
-
-        # 깊이 계산
-        depth = self.calculate_depth(front_width)
-
-        return height, width, depth
-    
-    def find_largest_box(self):
-        max_area = 0
-        front_box = None
-        for box in self.boxes:
-            width = box[1][0] - box[0][0]
-            height = box[1][1] - box[0][1]
-            area = width * height
-            if area > max_area:
-                max_area = area
-                front_box = box
-        return front_box, max_area
-    
-    def calculate_depth(self, front_width):
-        depths = []
-        for box in self.boxes:
-            box_width = box[1][0] - box[0][0]
-            depth = abs(front_width - box_width)
-            depths.append(depth)
-        return sum(depths) / len(depths) if depths else 0
-    
-# class GLWidget(QOpenGLWidget):
-#     initialized = pyqtSignal()  # OpenGL 환경 준비 완료 시그널
-
-#     def initializeGL(self):
-#         glEnable(GL_DEPTH_TEST)
-#         glEnable(GL_TEXTURE_2D)
-#         # OpenGL 환경 설정 코드...
-#         self.initialized.emit()  # OpenGL 환경 준비 완료 시 시그널 발생
-#         print('IIIIIIIIIIIIIIi')
+from config import faceKeywords, image_folder
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -195,44 +59,7 @@ class MainWindow(QMainWindow):
         self.click_count = 0
         self.faceBoxes = None # 유니크한 박스 저장
 
-
     def initUI(self):
-        # self.centralWidget = QWidget(self)
-        # self.setCentralWidget(self.centralWidget)
-        # layout = QVBoxLayout(self.centralWidget)
-
-        # self.widthInput = QLineEdit("1.0")
-        # self.heightInput = QLineEdit("1.0")
-        # self.depthInput = QLineEdit("1.0")
-
-        # self.glWidget = GLWidget(self)
-        # layout.addWidget(self.glWidget)
-
-        # btnBatchSelect = QPushButton("이미지선택", self)
-        # btnBatchSelect.clicked.connect(self.openMultipleImagesFileDialog)
-        # layout.addWidget(btnBatchSelect)
-
-        # # "이미지로드" 버튼 추가
-        # btnLoadImage = QPushButton("이미지로드", self)
-        # btnLoadImage.clicked.connect(self.loadImage)
-        # layout.addWidget(btnLoadImage)
-
-        # inputLayout = QHBoxLayout()
-        # sizeInputs = [
-        #     ("Width", self.widthInput),
-        #     ("Height", self.heightInput),
-        #     ("Depth", self.depthInput),
-        # ]
-        # for label, widget in sizeInputs:
-
-        #     inputLayout.addWidget(QLabel(label))
-        #     inputLayout.addWidget(widget)
-        # layout.addLayout(inputLayout)
-
-        # self.widthInput.textChanged[str].connect(self.glWidget.updateCube)
-        # self.heightInput.textChanged[str].connect(self.glWidget.updateCube)
-        # self.depthInput.textChanged[str].connect(self.glWidget.updateCube)
-
         self.centralWidget = QWidget(self)
         self.setCentralWidget(self.centralWidget)
         layout = QVBoxLayout(self.centralWidget)
@@ -270,22 +97,32 @@ class MainWindow(QMainWindow):
         self.heightInput.textChanged[str].connect(self.glWidget.updateCube)
         self.depthInput.textChanged[str].connect(self.glWidget.updateCube)
     
-    # def onGLInitialized(self):
-    #     # OpenGL 환경이 준비되었을 때 호출될 메서드
-    #     print("OpenGL environment is ready.")
-    #     # 여기에서 glWidget의 loadBoxFace를 호출하거나, 필요한 작업 수행
-    #     self.loadBoxFace()    
 
     def handle_click(self, x, y,button_clicked):
-       # 클릭된 좌표와 마우스 버튼 정보 처리
-        if button_clicked == "left":
+        # 이벤트를 발생시킨 객체를 가져옵니다.
+        sender_label = self.sender()
+
+        # sender_label을 확인하여 어떤 라벨에서 이벤트가 발생했는지 판별합니다.
+        if sender_label == self.imgLabel:
+            self.show_click_count(x, y)
+            print(f"Clicked on imgLabel at: ({x}, {y}) with {button_clicked} button")
+        elif sender_label == self.maskImgLabel:
             self.toggle_point_in_list(x, y)
             self.update_image_display()
-        elif button_clicked == "right":
-            print(f"Right button clicked at: ({x}, {y})")
-            self.show_click_count(x, y)
+            print(f"Clicked on maskImgLabel at: ({x}, {y}) with {button_clicked} button")
         else:
-            print(f"Clicked at: ({x}, {y}) without recognized button")
+            print("Clicked on an unidentified label")
+
+
+        # 클릭된 좌표와 마우스 버튼 정보 처리
+        # if button_clicked == "left":
+        #     self.toggle_point_in_list(x, y)
+        #     self.update_image_display()
+        # elif button_clicked == "right":
+        #     print(f"Right button clicked at: ({x}, {y})")
+        #     self.show_click_count(x, y)
+        # else:
+        #     print(f"Clicked at: ({x}, {y}) without recognized button")
 
 
     def openMultipleImagesFileDialog(self):
@@ -307,11 +144,11 @@ class MainWindow(QMainWindow):
 
     def loadBoxFace(self):
         for faceName ,index in faceKeywords.items():
-            filename = os.path.join(g_image_filder, f'{faceName}.jpg')
+            filename = os.path.join(image_folder, f'{faceName}.jpg')
             self.imagePaths[index] = filename
             self.glWidget.loadTextureForFace(filename, index)
 
-        width, depth = self.calculate_dimension_ratios(g_image_filder)
+        width, depth = self.calculate_dimension_ratios(image_folder)
         self.widthInput.setText("{:.2f}".format(width))
         self.depthInput.setText("{:.2f}".format(depth))
 
@@ -646,12 +483,8 @@ class MainWindow(QMainWindow):
                 for box_coord in non_overlap_box:
                     print(box_coord)
 
-                # calculator = BoxCalculator(non_overlap_box)
-                # height, width, depth = calculator.calculate_dimensions()
-                # print(f"Height: {height}, Width: {width}, Depth: {depth}")
-
                 pixImg = self.draw_boxes_on_image( qImg,non_overlap_box)
-                # self.save_boxes('./box_images',qImg,non_overlap_box)
+                # self.save_boxes(image_folder,qImg,non_overlap_box)
 
                 self.displayImage(pixImg, text_edges)
             else:
@@ -733,6 +566,7 @@ class MainWindow(QMainWindow):
     def show_click_count(self,X, Y):
         self.click_count %= 6
         faceName = [name for name, index in faceKeywords.items() if index == self.click_count ][0]
+        faceIndex = self.click_count
         self.click_count += 1
          # 팝업 예시 사용
         popup = PopupLabel(self)
@@ -751,7 +585,8 @@ class MainWindow(QMainWindow):
 
         find_box = self.find_box_containing_point(self.faceBoxes, X, Y)
         if find_box is not None:
-            self.save_face_box_as_image(find_box,faceName)
+            saved_image_path = self.save_face_box_as_image(find_box,faceName)
+            self.glWidget.updateTexture(saved_image_path, faceIndex) 
         else:
             print('Not found')
 
@@ -764,7 +599,7 @@ class MainWindow(QMainWindow):
             # 전역 좌표를 위젯의 좌표계로 변환
             localPos = self.mapFromGlobal(QPoint(globalX, globalY))
             x, y = localPos.x(), localPos.y()
-            print(topLeftX,globalX,bottomRightX,topLeftY,globalY ,bottomRightY)
+            # print(topLeftX,globalX,bottomRightX,topLeftY,globalY ,bottomRightY)
 
             # 좌표가 박스 내에 있는지 확인
             if topLeftX <= globalX <= bottomRightX and topLeftY <= globalY <= bottomRightY:
@@ -785,11 +620,13 @@ class MainWindow(QMainWindow):
         cropped_qimage = self.qImage.copy(topLeftX, topLeftY, width, height)
         
         # 저장할 경로 및 파일 이름 설정
-        save_path = f'./box_images/{faceName}.jpg'
+        save_path = f'{image_folder}{faceName}.jpg'
         
         # 이미지 저장
         cropped_qimage.save(save_path, 'JPG')
         print(f'Saved {faceName} as {save_path}')
+
+        return save_path  # 저장된 이미지의 경로를 반환합니다.
 
     def displayImage(self, pixImg, edges):
         screenWidth = QApplication.desktop().screenGeometry().width()
@@ -838,164 +675,16 @@ class MainWindow(QMainWindow):
         self.imgLabel.setPixmap(pixImg.scaled(newQImgWidth, newQImgHeight, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         self.layout.addWidget(self.imgLabel)
         
-        self.maskImgLabel = QLabel()
-        # maskImgLabel = ClickableLabel(edgesWidth, edgesHeight)
+        #self.maskImgLabel = QLabel()
+        self.maskImgLabel = ClickableLabel(edgesWidth, edgesHeight)
+        self.maskImgLabel.clicked.connect(self.handle_click)          
+
         self.maskImgLabel.setPixmap(edgesPixmap.scaled(newMaskQImgWidth, newMaskQImgHeight, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         self.layout.addWidget(self.maskImgLabel)
         
         self.imageWindow.setLayout(self.layout)
         self.imageWindow.setGeometry(100, 100, newQImgWidth + newMaskQImgWidth, max(newQImgHeight, newMaskQImgHeight))
         self.imageWindow.show()
-
-class GLWidget(QGLWidget):
-    def __init__(self, mainWindow):
-        super(GLWidget, self).__init__(mainWindow)
-        self.mainWindow = mainWindow
-        self.textureIDs = [0] * 6  # 텍스처 ID를 저장할 리스트
-        self.zoomLevel = -5
-        self.cubeWidth, self.cubeHeight, self.cubeDepth = 1.0, 1.0, 1.0
-         # 초기 회전값 설정: x, y, z축을 중심으로 회전
-        # self.xRot =   self.yRot =  self.zRot = 0  # z축 회전은 0으로 설정
-
-        self.xRot = 30  # x축을 중심으로 30도 회전
-        self.yRot = -245  # y축을 중심으로 -45도 회전
-        self.zRot = 0  # z축 회전은 0으로 설정
-        self.lastPos = QPoint()
-
-    def initializeGL(self):
-        glEnable(GL_DEPTH_TEST)
-        glEnable(GL_TEXTURE_2D)
-
-        self.setupTextures()
-
-    def setupTextures(self):
-        for faceName ,index in faceKeywords.items():
-            filename = os.path.join(g_image_filder, f'{faceName}.jpg')
-            self.loadTextureForFace(filename, index)
-
-        width, depth = self.mainWindow.calculate_dimension_ratios(g_image_filder)
-        self.mainWindow.widthInput.setText("{:.2f}".format(width))
-        self.mainWindow.depthInput.setText("{:.2f}".format(depth))
-
-
-    def loadTextureForFace(self, imagePath, faceIndex):
-        textureID = glGenTextures(1)
-        glBindTexture(GL_TEXTURE_2D, textureID)
-            
-        image = Image.open(imagePath)
-
-        if faceIndex == 4 or faceIndex == 5:
-            image = image.rotate(180, expand=True)
-        else:
-            image = image.rotate(-90, expand=True)
-        image = image.transpose(Image.FLIP_TOP_BOTTOM)
-        ix, iy, image = (
-            image.size[0],
-            image.size[1],
-            image.tobytes("raw", "RGBA", 0, -1),
-        )
-        glTexImage2D(
-            GL_TEXTURE_2D, 0, GL_RGBA, ix, iy, 0, GL_RGBA, GL_UNSIGNED_BYTE, image
-        )
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-
-        self.textureIDs[faceIndex] = textureID
-        self.update()
-
-    def wheelEvent(self, event):
-
-        delta = event.angleDelta().y() / 120
-        self.zoomLevel += delta
-        self.update()
-
-    def paintGL(self):
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        glLoadIdentity()
-        glTranslatef(0.0, 0.0, self.zoomLevel)
-        glRotatef(self.xRot, 1.0, 0.0, 0.0)
-        glRotatef(self.yRot, 0.0, 1.0, 0.0)
-        glRotatef(self.zRot, 0.0, 0.0, 1.0)
-
-        self.drawCube()
-
-    def resizeGL(self, w, h):
-        glViewport(0, 0, w, h)
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        gluPerspective(45, float(w) / h, 0.1, 100.0)
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
-
-    def updateCube(self):
-        try:
-
-            self.cubeWidth = float(self.mainWindow.widthInput.text())
-            self.cubeHeight = float(self.mainWindow.heightInput.text())
-            self.cubeDepth = float(self.mainWindow.depthInput.text())
-        except ValueError:
-
-            return
-        self.update()
-
-    def mousePressEvent(self, event):
-        self.lastPos = event.pos()
-
-    def mouseMoveEvent(self, event):
-        dx = event.x() - self.lastPos.x()
-        dy = event.y() - self.lastPos.y()
-
-        if event.buttons() & Qt.LeftButton:
-            self.xRot += dy
-            self.yRot += dx
-        elif event.buttons() & Qt.RightButton:
-            self.xRot += dy
-            self.zRot += dx
-
-        self.lastPos = event.pos()
-        self.update()
-
-    def drawCube(self):
-
-        vertices = [
-            [self.cubeWidth, self.cubeHeight, -self.cubeDepth],
-            [self.cubeWidth, -self.cubeHeight, -self.cubeDepth],
-            [-self.cubeWidth, -self.cubeHeight, -self.cubeDepth],
-            [-self.cubeWidth, self.cubeHeight, -self.cubeDepth],
-            [self.cubeWidth, self.cubeHeight, self.cubeDepth],
-            [self.cubeWidth, -self.cubeHeight, self.cubeDepth],
-            [-self.cubeWidth, -self.cubeHeight, self.cubeDepth],
-            [-self.cubeWidth, self.cubeHeight, self.cubeDepth],
-        ]
-
-        faces = [
-            [0, 1, 2, 3],
-            [3, 2, 6, 7],
-            [7, 6, 5, 4],
-            [4, 5, 1, 0],
-            [5, 6, 2, 1],
-            [7, 4, 0, 3],
-        ]
-
-        # Define colors for each face
-        colors = [
-            [1, 0, 0],  # Red
-            [0, 1, 0],  # Green
-            [0, 0, 1],  # Blue
-            [1, 1, 0],  # Yellow
-            [1, 0, 1],  # Magenta
-            [0, 1, 1],  # Cyan
-        ]
-        texCoords = [(1, 0), (0, 0), (0, 1), (1, 1)]
-
-        for i, face in enumerate(faces):
-            glBindTexture(GL_TEXTURE_2D, self.textureIDs[i])
-            glBegin(GL_QUADS)
-            for j, vertex in enumerate(face):
-                glTexCoord2f(*texCoords[j % 4])
-                glVertex3fv(vertices[vertex])
-            glEnd()
-
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
