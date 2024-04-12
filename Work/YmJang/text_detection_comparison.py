@@ -6,7 +6,7 @@ from konlpy.tag import Kkma
 
 class TextDetectionAndComparison:
     def __init__(self, google_api_credentials, client_options={'api_endpoint': 'eu-vision.googleapis.com'}):
-        os.environ['AIzaSyBf-Ylzi2KEq4Ci2PneXPhVUnr_TbMSSvM'] = google_api_credentials
+        os.environ['api'] = google_api_credentials
         self.client = vision.ImageAnnotatorClient(client_options=client_options)
         self.kkma = Kkma()
     
