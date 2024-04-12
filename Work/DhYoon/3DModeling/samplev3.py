@@ -40,8 +40,10 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("Box image rendering")
         self.setGeometry(100, 100, 800, 600)
-        self.imagePaths = [None] * 6
+
         self.initUI()
+
+        self.imagePaths = [None] * 6
 
         self.imageWindow = None  # imageWindow를 저장하기 위한 클래스 변수 추가
         self.imgLabel  = None # 기존 위젯 제거

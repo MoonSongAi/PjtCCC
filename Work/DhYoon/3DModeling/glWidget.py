@@ -155,7 +155,7 @@ class GLWidget(QGLWidget):
                 glTexCoord2f(*texCoords[j % 4])
                 glVertex3fv(vertices[vertex])
             glEnd()
-    ### add by Yoon 
+    ### add by Yoon 2024 / 04/12 
     def updateTexture(self, imagePath, faceIndex):
         # 기존 텍스처가 있다면 삭제
         if self.textureIDs[faceIndex] != 0:

@@ -32,6 +32,7 @@ class PopupLabel(QLabel):
 
 class ClickableLabel(QLabel): 
     clicked = pyqtSignal(int , int , str)  # 사용자 정의 시그널, 클릭된 좌표와 클릭된 버튼("left" 또는 "right")을 전달합니다.
+
     def __init__(self, original_width, original_height, *args, **kwargs):
         super(ClickableLabel, self).__init__(*args, **kwargs)
         self.original_width = original_width
