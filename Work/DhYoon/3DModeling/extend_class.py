@@ -1,35 +1,17 @@
-import os
-import sys
-import cv2
-import numpy as np
 
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from PIL import Image
 from PyQt5.QtCore import QPoint, Qt ,pyqtSignal, QTimer 
-from PyQt5.QtOpenGL import QGLWidget
 from PyQt5.QtWidgets import (
-    QApplication,
-    QFileDialog,
-    QHBoxLayout,
     QLabel,
-    QLineEdit,
-    QMainWindow,
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
-    QToolTip,
-    QOpenGLWidget
+    QToolTip
 )
 from PyQt5.QtGui import (
-    QImage, 
-    QPixmap, 
     QPainter, 
     QPen, 
     QColor,
-    QCursor,
 )
-
 class PopupLabel(QLabel):
     def __init__(self, parent=None):
         super(PopupLabel, self).__init__(parent)
