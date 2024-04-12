@@ -11,6 +11,7 @@ from OCR_visualization import plt_imshow, putText, detect_text, load_terms, \
                         load_special_characters, combine_boxes_for_specific_words_1, \
                         combine_boxes_for_specific_words_2, combine_boxes_for_specific_words_3,\
                         draw_bounding_box, correct_and_visualize
+from text_detection_comparison import TextDetectionAndComparison
 
 from streamlit_cropper import st_cropper
 from PIL import Image
@@ -172,7 +173,7 @@ def main():
             st.session_state.loaded_image = uploaded_Image
             st.session_state.saved_images = []
             st.session_state.images_list = []
-            st.session_state.process_images = []
+            st.session_state.images_list = []
             del_buttons = []
 
             st.session_state.anal_image = False
@@ -266,6 +267,24 @@ def main():
                         if st.session_state[zoom_key]:
                             st.image(st.session_state.process_images[idx], width=400)
 
+        st.write("***_:blue[Preview Cropped Image]_***")
+        # Google Cloud 자격 증명 파일의 경로를 사용하여 클래스 초기화
+        detector = TextDetectionAndComparison('clearcutcheck-d80da6ea66bf.json')
+
+        # 두 이미지에서 텍스트 감지하는 함수 정의
+        def detect_text_from_images(images_list):
+            texts = []
+            for image_path in images_list:
+                text = detector.detect_text(image_path)
+                texts.append(text)
+            return texts
+
+        # 이미지 리스트에서 텍스트 감지
+        texts = detect_text_from_images(st.session_state.images_list)
+
+        # 텍스트 비교하여 우월한 텍스트 결정
+        result = detector.determine_superior_text(texts[0], texts[1])
+        print(result)
 
 ##########################################################################################################################chat
     # if not openai_api_key:

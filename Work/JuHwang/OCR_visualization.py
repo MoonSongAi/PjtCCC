@@ -297,4 +297,3 @@ def correct_and_visualize(image_path, texts, correction_dict_1, correction_dict_
                 break
     
     plt_imshow(["Original", "ROI"], [img, roi_img], figsize=(16, 10))
-

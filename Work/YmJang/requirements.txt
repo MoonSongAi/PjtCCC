@@ -89,3 +89,6 @@ google-auth==2.29.0
 google-cloud-vision==3.7.2
 googleapis-common-protos==1.63.0
 matplotlib==3.8.3
+
+#04/12
+konlpy
