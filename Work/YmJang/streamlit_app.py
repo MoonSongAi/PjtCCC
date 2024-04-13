@@ -269,34 +269,9 @@ def main():
 
         st.write("***_:blue[OCR]_***")
         # Google Cloud 자격 증명 파일의 경로를 사용하여 클래스 초기화
-        detector = TextDetectionAndComparison("C:\\keys\\feisty-audio-420101-460dfe33e2cb.json")
+        
 
-        # 두 이미지에서 텍스트 감지하는 함수 정의
-        def detect_text_from_images(image_paths):
-            texts = []
-            for image_path in image_paths:
-                text = detector.detect_text(image_path)
-                texts.append(text)
-            return texts
-
-        # 이미지 리스트에서 텍스트 감지할 이미지 경로 설정
-        image_paths = []
-        if len(st.session_state.images_list) > 0 and len(st.session_state.process_images) > 0:
-            image_paths = [st.session_state.images_list[0], st.session_state.process_images[0]]
-
-        # 텍스트 감지
-        texts = detect_text_from_images(image_paths)
-
-        # 텍스트가 충분히 감지되었는지 확인
-        if len(texts) < 2:
-            st.error("충분한 텍스트를 감지하지 못했습니다.")
-        else:
-            # 충분한 텍스트가 있는 경우, 비교 로직 수행
-            result = detector.determine_superior_text(texts[0], texts[1])
-            st.write("이미지 전처리 전:", texts[0])
-            st.write("이미지 전처리 후:", texts[1])
-            st.write("비교 결과:", result)
-
+        
 ##########################################################################################################################chat
     # if not openai_api_key:
     #    openai_api_key = st.secrets["OpenAI_Key"]
