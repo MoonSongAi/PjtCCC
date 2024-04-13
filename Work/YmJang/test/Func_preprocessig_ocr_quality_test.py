@@ -56,9 +56,9 @@ class TextDetectionAndComparison:
         errors1 = len(self.kkma.pos(text_to_check, flatten=False))
         errors2 = len(self.kkma.pos(text_to_check2, flatten=False))
 
-        if errors1 < errors2:
+        if errors1 > errors2:
             return "첫 번째 텍스트가 더 우월합니다."
-        elif errors1 > errors2:
+        elif errors1 < errors2:
             return "두 번째 텍스트가 더 우월합니다."
         else:
             return "두 텍스트의 우월함을 결정할 수 없습니다."
@@ -71,14 +71,16 @@ detector = TextDetectionAndComparison("C:\\keys\\feisty-audio-420101-460dfe33e2c
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # Detect text from two images
-text1 = detector.detect_text("image.jpg")
-text2 = detector.detect_text("images.png")
+text1 = detector.detect_text("b.jpg")
+text2 = detector.detect_text("reb.png")
 
 # Compare the texts to determine which is superior
 result = detector.determine_superior_text(text1, text2)
 
+print('원본 이미지')
 print(text1)
 print('-'*20)
+print('전처리 이미지')
 print(text2)
 print('-'*20)
 print(result)
