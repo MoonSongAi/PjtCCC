@@ -57,9 +57,9 @@ class TextDetectionAndComparison:
         errors1 = len(self.kkma.pos(text_to_check, flatten=False))
         errors2 = len(self.kkma.pos(text_to_check2, flatten=False))
 
-        if errors1 < errors2:
+        if errors1 > errors2:
             return "첫 번째 텍스트가 더 우월합니다."
-        elif errors1 > errors2:
+        elif errors1 < errors2:
             return "두 번째 텍스트가 더 우월합니다."
         else:
             return "두 텍스트의 우월함을 결정할 수 없습니다."
