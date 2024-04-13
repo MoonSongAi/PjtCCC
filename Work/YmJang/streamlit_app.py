@@ -30,6 +30,11 @@ def delete_image(image_index):
         st.rerun()
 
 def main():
+    
+    # Google Cloud 자격 증명 파일의 경로를 사용하여 클래스 초기화
+    detector = TextDetectionAndComparison("C:\\keys\\feisty-audio-420101-460dfe33e2cb.json")
+
+
     DB_INDEX = "VECTOR_DB_INDEX"
     st.set_page_config(
         page_title="표시 디자인",
@@ -80,6 +85,8 @@ def main():
         st.session_state.process_images = []
     if 'images_list' not in st.session_state:
         st.session_state.images_list = []
+    if 'process_list' not in st.session_state:
+            st.session_state.process_list = []
     if 'loaded_image' not in st.session_state:
         st.session_state.loaded_image = None
     if 'anal_image' not in st.session_state:
@@ -174,6 +181,7 @@ def main():
             st.session_state.saved_images = []
             st.session_state.images_list = []
             st.session_state.process_images = []
+            st.session_state.process_list = []
             del_buttons = []
 
             st.session_state.anal_image = False
@@ -243,12 +251,18 @@ def main():
                     image = Image.open(img_path).convert('RGB')
                     processed_image = process_image_with_hsv_range(image, lower_hsv, upper_hsv)
                     
+                    # 저장된 이미지 리스트에 이미지 추가
+                    st.session_state.process_images.append(processed_image)
+                    save_name = save_image_to_folder(processed_image)
+                    st.session_state.process_list.append(save_name)
+
+                    
                     # 처리된 이미지를 저장합니다. 이미지 리스트가 업데이트되면서, 해당하는 zoom_key도 동기화되어야 합니다.
                     # 여기서는 리사이즈하지 않고 원본 크기를 유지합니다.
-                    if len(st.session_state.process_images) > idx:
-                        st.session_state.process_images[idx] = processed_image
-                    else:
-                        st.session_state.process_images.append(processed_image)
+                    # if len(st.session_state.process_images) > idx:
+                    #     st.session_state.process_images[idx] = processed_image
+                    # else:
+                    #     st.session_state.process_images.append(processed_image)
 
                     zoom_key = f"zoom_{idx}"
                     
@@ -267,11 +281,22 @@ def main():
                         if st.session_state[zoom_key]:
                             st.image(st.session_state.process_images[idx], width=400)
 
-        st.write("***_:blue[OCR]_***")
-        # Google Cloud 자격 증명 파일의 경로를 사용하여 클래스 초기화
-        
+                st.write("***_:blue[OCR]_***")
+                # Google Cloud 자격 증명 파일의 경로를 사용하여 클래스 초기화
 
-        
+                for idx, image_path in enumerate(st.session_state.images_list):
+                    text1 = detector.detect_text(image_path)
+                    text2 = detector.detect_text(st.session_state.process_list[idx])
+                    result = detector.determine_superior_text(text1, text2)
+                    print("비교 결과:", result)
+
+                st.write('원본 이미지')
+                st.write(text1)
+                st.write('-'*50)
+                st.write('전처리 이미지')
+                st.write(text2)
+                st.write('-'*50)
+                st.write("비교 결과:", result)
 ##########################################################################################################################chat
     # if not openai_api_key:
     #    openai_api_key = st.secrets["OpenAI_Key"]
