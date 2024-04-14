@@ -1,16 +1,16 @@
 
 
-from google.cloud import vision
 import io
-import pandas as pd
-import cv2
-import numpy as np
-import matplotlib.pyplot as plt
-from PIL import Image, ImageDraw, ImageFont
-import platform
 import os
-import matplotlib.pyplot as plt
+import cv2
 import csv
+import platform
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+from google.cloud import vision
+from PIL import Image, ImageDraw, ImageFont
 
 def plt_imshow(title='image', img=None, figsize=(8 ,5)):
     plt.figure(figsize=figsize)
@@ -74,7 +74,7 @@ def putText(image, text, x, y, color=(0, 255, 0), font_size=22):
 ###API입력######
 def detect_text(path):
     """이미지 파일에서 텍스트를 감지합니다."""
-    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'xxxxxx.json' #json으로 발급받은 API키 입력 
+    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '.json' #json으로 발급받은 API키 입력 
     client_options = {'api_endpoint': 'eu-vision.googleapis.com'} #Google Cloud Vision API의 엔드포인트를 설정
     client = vision.ImageAnnotatorClient(client_options=client_options)#Google Cloud Vision API의 ImageAnnotatorClient 인스턴스를 생성합니다. 
     # client = vision.ImageAnnotatorClient()
@@ -210,6 +210,70 @@ def combine_boxes_for_specific_words_2(texts, special_chars):
 
     return combined_texts
 
+def combine_boxes_for_specific_words_2_rev1(texts, special_chars):
+    combined_texts = []
+    i = 0
+
+    while i < len(texts):
+        # 이하 로직은 동일하며, description in [")", "("] 대신에
+        # description in special_chars 조건을 사용하여 괄호 처리
+        text = texts[i]
+        description = text.description
+
+        combine_with_next = False
+        combine_with_prev = False
+
+        if i > 0:
+            prev_text = texts[i - 1]
+            prev_right_x = prev_text.bounding_poly.vertices[1].x
+            current_left_x = text.bounding_poly.vertices[0].x
+            if current_left_x - prev_right_x >= 5 and description in special_chars:
+                combine_with_prev = True
+
+        if i < len(texts) - 1:
+            next_text = texts[i + 1]
+            next_description = next_text.description
+            current_right_x = text.bounding_poly.vertices[1].x
+            next_left_x = next_text.bounding_poly.vertices[0].x
+            if next_left_x - current_right_x >= 5 and description in special_chars:
+                combine_with_next = True
+
+        # 이하 로직은 동일...
+        if combine_with_next or combine_with_prev:
+            # 다음 단어 또는 이전 단어와 합침
+            new_description = description + " " + next_description if combine_with_next else prev_text.description + " " + description
+            new_vertices = [
+                {"x": text.bounding_poly.vertices[0].x, "y": text.bounding_poly.vertices[0].y},
+                {"x": next_text.bounding_poly.vertices[1].x, "y": next_text.bounding_poly.vertices[1].y},
+                {"x": next_text.bounding_poly.vertices[2].x, "y": next_text.bounding_poly.vertices[2].y},
+                {"x": text.bounding_poly.vertices[3].x, "y": text.bounding_poly.vertices[3].y}
+            ] if combine_with_next else [
+                {"x": prev_text.bounding_poly.vertices[0].x, "y": prev_text.bounding_poly.vertices[0].y},
+                {"x": text.bounding_poly.vertices[1].x, "y": text.bounding_poly.vertices[1].y},
+                {"x": text.bounding_poly.vertices[2].x, "y": text.bounding_poly.vertices[2].y},
+                {"x": prev_text.bounding_poly.vertices[3].x, "y": prev_text.bounding_poly.vertices[3].y}
+            ]
+            combined_box = {
+                "description": new_description,
+                "bounding_poly": {"vertices": new_vertices}
+            }
+            combined_texts.append(combined_box)
+            i += 2 if combine_with_next else 1
+        else:
+            # 기존 박스를 유지하는 경우도 딕셔너리 형태로 변환하여 추가
+            unchanged_box = {
+                "description": description,
+                "bounding_poly": {
+                    "vertices": [
+                        {"x": vertex.x, "y": vertex.y} for vertex in text.bounding_poly.vertices
+                    ]
+                }
+            }
+            combined_texts.append(unchanged_box)
+            i += 1
+
+    return combined_texts
+
 def combine_boxes_for_specific_words_3(texts, special_chars):
     combined_texts = []
     i = 0
@@ -270,7 +334,16 @@ def draw_bounding_box(image, vertices, color, text='', text_color=(255, 255, 255
         image = putText(image, text, x1, y1 - 15, color=text_color, font_size=font_size)
     return image
 
-def correct_and_visualize(image_path, texts, correction_dict_1, correction_dict_2, correction_dict_3):
+def correct_and_visualize(image_path, texts, correction_dict_1, correction_dict_2, correction_dict_3, correction_dict_4):
+    # print("Given image path:", image_path)
+    # print("Does the file exist?", os.path.exists(image_path))
+
+    # # 이미지를 로드하고 결과를 확인
+    # img = cv2.imread(image_path)
+    # if img is None:
+    #     raise ValueError("Failed to load image, please check the file path.")
+    # else:
+    #     print("Image loaded successfully")
     img = cv2.imread(image_path)
     roi_img = img.copy()
 
@@ -281,9 +354,9 @@ def correct_and_visualize(image_path, texts, correction_dict_1, correction_dict_
         corrected = False
 
         for correction_dict, box_color, text_color, message_prefix in zip(
-        [correction_dict_1, correction_dict_2, correction_dict_3], 
-        [(0, 0, 255), (255, 0, 0), (0, 165, 255)],[(255, 0, 0), (0, 0, 255),(255, 165, 0)],
-        ["주의어: ", "붙여쓰기: ", "띄어쓰기: "]):  # 각 사전에 대한 안내 메시지를 정의
+        [correction_dict_1, correction_dict_2, correction_dict_3, correction_dict_4], 
+        [(0, 0, 255), (255, 0, 0), (0, 165, 255), (50, 205, 50)],[(255, 0, 0), (0, 0, 255), (255, 165, 0), (50, 205, 50)],
+        ["주의어: ", "붙여쓰기: ", "띄어쓰기: ", "볼드체: "]):  # 각 사전에 대한 안내 메시지를 정의
             for wrong, correct in correction_dict.items():
                 if wrong in text["description"]:
                 # if wrong in text.description:
@@ -295,5 +368,26 @@ def correct_and_visualize(image_path, texts, correction_dict_1, correction_dict_
                     break
             if corrected:
                 break
-    
     plt_imshow(["Original", "ROI"], [img, roi_img], figsize=(16, 10))
+
+
+
+def main():
+    correction_dict_1 = load_terms('C:\\Users\\bluecom010\\Desktop\\지의\\24_03_22_최종프로젝트\\맞춤법\\맞춤법용어집_주의어.csv')
+    correction_dict_2 = load_terms('C:\\Users\\bluecom010\\Desktop\\지의\\24_03_22_최종프로젝트\\맞춤법\\맞춤법용어집_붙여쓰기.csv')
+    correction_dict_3 = load_terms('C:\\Users\\bluecom010\\Desktop\\지의\\24_03_22_최종프로젝트\\맞춤법\\맞춤법용어집_띄어쓰기.csv') # 0g, 1g,...
+    correction_dict_4 = load_terms('C:\\Users\\bluecom010\\Desktop\\지의\\24_03_22_최종프로젝트\\맞춤법\\맞춤법용어집_볼드체.csv')
+    special_chars_2 = load_special_characters('C:\\Users\\bluecom010\\Desktop\\지의\\24_03_22_최종프로젝트\\맞춤법\\맞춤법용어집_붙여쓰기_특정문자.csv')
+
+    # image_path = '../../OCR_test/test_final_2.png'
+    image_path = "C:\\Users\\bluecom010\\Desktop\\visual.png"
+
+    texts = detect_text(image_path)  # detect_text 함수로부터 얻은 텍스트
+
+    texts_rev1 = combine_boxes_for_specific_words_2(texts, special_chars_2) ##special_chars에 ['(',')'] 넣으면 괄호 앞단어 뒷단어가 좌표5이상 띄어져 있을 때 함꼐 bbox쳐짐
+    texts_rev2 = combine_boxes_for_specific_words_1(texts_rev1, ["유통", "기한"]) ##합쳐서 bbox치고 싶은 단어를 list로 받아서 bbox쳐지도록 함수화 시킴 ex)'유통' 다음 다음이 '기한'일 경우 함꼐 bbox쳐짐 
+    combined_texts = combine_boxes_for_specific_words_1(texts_rev2, ["프랑스", "산"]) ##합쳐서 bbox치고 싶은 단어를 list로 받아서 bbox쳐지도록 함수화 시킴 ex)'프랑스' 다음 다음이 '산'일 경우 함꼐 bbox쳐짐 
+    correct_and_visualize(image_path, combined_texts, correction_dict_1, correction_dict_2, correction_dict_3, correction_dict_4)
+
+if __name__ == "__main__":
+    main()
