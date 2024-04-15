@@ -9,12 +9,12 @@
 
 - 🌱 We're currently learning **The process of developing AI services using open source and platforms**
 - **team leader 😁 김동민** : 개발팀 리더로 역활을 수행 중이고요...ㅠㅠ ******************** 관심이 많습니다.
-- **team member 🤪 백혜리** : ㅁㄴㄹㅇㄴㄻㄴㄹㄴㅇㅁㄹㄹ...ㅠㅠ ㅁㄴㅇㄹㅇㄴㄹㅇㅁㄴㄻㄴㅇㄹ.
-- **team member 😉 윤도하** : 젊은 개발자들과 잘 지내 볼려고  노력중 입니다....ㅠㅠ OpenCV와 segmentation 그리고 기업의 정형 , 비정형 데이타를 오픈 플랫폼 AI 서비스로 가공하는 서비스에 관심이 많습니다.
-- **team member 🥵 이예림** :ㅁㄴㄹㅇㄻㄴㄻㄴㅇㄻㄴㅇㄻㄴㅇㄹ.
-- **team member 🤠 장유미** :ㅁㄴㅇㄹㄴㅁㅇㄻㄴㅇㄻㄴㅇㄻㄴㅇㄹㅇㄴㅁㄻ.
-- **team member 🤭 최재권** : ㅁㄴㄻㄴㅇㄹㄴㅁㅇㄹㄴㅇㅁㄹㅇㄴㄻ.
-- **team member 😎 황지의** : ㅁㄴㅇㄻㄴㄹㄴㅁㅇㄹㄴㅇㄹㅇㄴㅁㄹㅇㄹㅇㄴㅁㄹㅇㄴㅁㄻㄴㄹㄹㄴㅇㅁㄹ.
+- **team member 🤪 백혜리** : Google Vision API , Naver Clovar OCR 등 다양한 Open flatform AI 기술을 시험적으로 사용해 봤습니다. 반도체 기업에 관심이 많아요
+- **team member 😉 윤도하** : 젊고 유능한 젊은 팀원들과 잘 지내 볼려고  노력중 입니다. OpenCV와 segmentation 그리고 기업의 정형 , 비정형 데이타를 오픈 플랫폼 AI 서비스로 가공하는 서비스에 관심이 많습니다.(Work/DhYoon)
+- **team member 🥵 이예림** : LangChain 활용 Chuck , vector DB 활용하는법 , 다양한 문서 포멧을 파싱해서 vector화 시키는 다양한 기술 경험 중입니다.
+- **team member 🤠 장유미** : streamlit 과 Python 함수화 과정 헤메고 있습니다..
+- **team member 🤭 최재권** : 이미지 segmentation 달인이 되겠습니다. 유미 여사님 열심히 도와 착하게 살고 싶습니다..
+- **team member 😎 황지의** : 다양한 이미지 OCR 처리 , 단어 , 특수문자등 특화된 도메인에 적용 가능한 사전기능등 OCR 이미지 처리에 자신이 있습니다.
 
 - 📫 How to reach me **MoonSongAi@gmail.com**
 
@@ -32,52 +32,43 @@
 
 
 ## Miniconda3 환경에서 가상환경 만든다
-- terminal bash 명령어
-'''
-   >>> conda create --name CCC
-   >>> conda activate CCC
-'''
+```bash
+   $ conda create --name CCC
+   $ conda activate CCC
+```
 ## share.streamlit.io 에서 app을 등록 한다
 - 본 프로젝트에서는 google API , OpenAI API 등에 사용되는 json , pswd 등이 사용되어 
  - 원격 배포는 하지 않는다. 
 
-##원격서버 대신 로칼에서 동작 하는 것으로 한다 
-'''
- >>> Streamlit run C:\PjtCCC\Bin\streamlit_app.py
-'''
+## 원격서버 대신 로칼에서 동작 하는 것으로 한다 
+```bash
+ $ Streamlit run C:\PjtCCC\Bin\streamlit_app.py
+```
 ## Git init and remote connection
 ##PC에 git-scm.com에서 Git Download & install
-'''
->>> git init  
->>> git remote add origin https://github.com/MoonSongIT/langchain_st.git
-'''
- 
+
+```bash
+    $ git init  
+    $ git remote add origin https://github.com/MoonSongIT/langchain_st.git
+```
+## Conda 환경에서의 CCC 가상환경으로 activate 된 후 일괄 패키지 install
+```bash
+   (CCC) $ pip install -r requirements.txt
+``` 
 ### langchain_community.chat_models.openai.ChatOpenAI 클래스가 
-#### langchain-community 버전 0.0.10에서 사용 중단(Deprecated) 되었으며,
+### langchain-community 버전 0.0.10에서 사용 중단(Deprecated) 되었으며,
 ### 0.2.0 버전에서 제거될 예정임을 알립
-'''
->>> pip install -U langchain-openai
+```bash
+ $ pip install -U langchain-openai
 
-from langchain_openai import ChatOpenAI
+ $ pip install streamlit-drawable-canvas
+ $ pip install streamlit-cropper
+ $ pip install pdf2image
+ $ pip install PyMuPDF
 
->>>pip install streamlit-drawable-canvas
->>>pip install streamlit-cropper
->>>pip install pdf2image
->>>pip install PyMuPDF
-
-'''
-
-# 4/2 
-'''
-
->>>pip install pypdf
->>>pip install sentence-transformers
->>>pip install faiss-gpu
-'''
-
-#4/4
-'''
-
->>>pip install docx2txt
-'''
+ $ pip install pypdf
+ $ pip install sentence-transformers
+ $ pip install faiss-gpu
+ $ pip install docx2txt
+```
 
