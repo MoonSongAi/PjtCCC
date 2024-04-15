@@ -12,7 +12,7 @@
 - **team member 🤪 백혜리** : Google Vision API , Naver Clovar OCR 등 다양한 Open flatform AI 기술을 시험적으로 사용해 봤습니다. 반도체 기업에 관심이 많아요.([Work/HrBaek](https://github.com/MoonSongAi/PjtCCC/tree/master/Work/JHrBaek))
 - **team member 😉 윤도하** : 젊고 유능한 젊은 팀원들과 잘 지내 볼려고 노력 중 입니다. OpenCV와 segmentation 그리고 기업의 정형 , 비정형 데이타를 오픈 플랫폼 AI 서비스로 가공하는 서비스에 관심이 많습니다.([Work/DhYoon](https://github.com/MoonSongAi/PjtCCC/tree/master/Work/DhYoon))
 - **team member 🥵 이예림** : LangChain 활용 Chuck , vector DB 활용하는법 , 다양한 문서 포멧을 파싱해서 vector화 시키는 다양한 기술 경험 중입니다.([Work/YeRim](https://github.com/MoonSongAi/PjtCCC/tree/master/Work/YeRim))
-- **team member 🤠 장유미** : streamlit 과 Python 함수화 과정 헤메고 있습니다.([Work/YeRim](https://github.com/MoonSongAi/PjtCCC/tree/master/Work/YeRim))
+- **team member 🤠 장유미** : streamlit 과 Python 함수화 과정 헤메고 있습니다.([Work/YmJang](https://github.com/MoonSongAi/PjtCCC/tree/master/Work/YmJang))
 - **team member 🤭 최재권** : 이미지 segmentation 달인이 되겠습니다. 유미 여사님 열심히 도와 착하게 살고 싶습니다.([Work/JGChoi](https://github.com/MoonSongAi/PjtCCC/tree/master/Work/JGChoi))
 - **team member 😎 황지의** : 다양한 이미지 OCR 처리 , 단어 , 특수문자등 특화된 도메인에 적용 가능한 사전기능등 OCR 이미지 처리에 자신이 있습니다.([Work/JuHwang](https://github.com/MoonSongAi/PjtCCC/tree/master/Work/JuHwang))
 
