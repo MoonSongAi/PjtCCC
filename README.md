@@ -8,7 +8,14 @@
 - 🔭 We're currently working on **CCC team**
 
 - 🌱 We're currently learning **The process of developing AI services using open source and platforms**
+- team leader 😉 김동민 : 젊은 얼라들과 살아 볼려고 발버둥 치고 있습니다...ㅠㅠ OpenCV와 기업의 정형 데이타를 오픈 플랫폼 AI 서비스로 가공한는 서비스에 관심이 많습니다.
+- team member 😉 백혜리 : 젊은 얼라들과 살아 볼려고 발버둥 치고 있습니다...ㅠㅠ OpenCV와 기업의 정형 데이타를 오픈 플랫폼 AI 서비스로 가공한는 서비스에 관심이 많습니다.
+- team member 😉 성형석 : 젊은 얼라들과 살아 볼려고 발버둥 치고 있습니다...ㅠㅠ OpenCV와 기업의 정형 데이타를 오픈 플랫폼 AI 서비스로 가공한는 서비스에 관심이 많습니다.
 - team member 😉 윤도하 : 젊은 얼라들과 살아 볼려고 발버둥 치고 있습니다...ㅠㅠ OpenCV와 기업의 정형 데이타를 오픈 플랫폼 AI 서비스로 가공한는 서비스에 관심이 많습니다.
+- team member 😉 이예림 : 젊은 얼라들과 살아 볼려고 발버둥 치고 있습니다...ㅠㅠ OpenCV와 기업의 정형 데이타를 오픈 플랫폼 AI 서비스로 가공한는 서비스에 관심이 많습니다.
+- team member 😉 장유미 : 젊은 얼라들과 살아 볼려고 발버둥 치고 있습니다...ㅠㅠ OpenCV와 기업의 정형 데이타를 오픈 플랫폼 AI 서비스로 가공한는 서비스에 관심이 많습니다.
+- team member 😉 최재권 : 젊은 얼라들과 살아 볼려고 발버둥 치고 있습니다...ㅠㅠ OpenCV와 기업의 정형 데이타를 오픈 플랫폼 AI 서비스로 가공한는 서비스에 관심이 많습니다.
+- team member 😉 황지의 : 젊은 얼라들과 살아 볼려고 발버둥 치고 있습니다...ㅠㅠ OpenCV와 기업의 정형 데이타를 오픈 플랫폼 AI 서비스로 가공한는 서비스에 관심이 많습니다.
 
 - 📫 How to reach me **MoonSongAi@gmail.com**
 
