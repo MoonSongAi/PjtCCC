@@ -10,7 +10,7 @@
 - 🌱 We're currently learning **The process of developing AI services using open source and platforms**
 - **team leader 😁 김동민** : 개발팀 리더로 역활을 수행 중이고요...ㅠㅠ ******************** 관심이 많습니다.
 - **team member 🤪 백혜리** : ㅁㄴㄹㅇㄴㄻㄴㄹㄴㅇㅁㄹㄹ...ㅠㅠ ㅁㄴㅇㄹㅇㄴㄹㅇㅁㄴㄻㄴㅇㄹ.
-- **team member 😉 윤도하** : 젊은 얼라들과 살아 볼려고 발버둥 치고 있습니다...ㅠㅠ OpenCV와 segmentation 그리고 기업의 정형 , 비정형 데이타를 오픈 플랫폼 AI 서비스로 가공하는 서비스에 관심이 많습니다.
+- **team member 😉 윤도하** : 젊은 개발자들과 잘 지내 볼려고  노력중 입니다....ㅠㅠ OpenCV와 segmentation 그리고 기업의 정형 , 비정형 데이타를 오픈 플랫폼 AI 서비스로 가공하는 서비스에 관심이 많습니다.
 - **team member 🥵 이예림** :ㅁㄴㄹㅇㄻㄴㄻㄴㅇㄻㄴㅇㄻㄴㅇㄹ.
 - **team member 🤠 장유미** :ㅁㄴㅇㄹㄴㅁㅇㄻㄴㅇㄻㄴㅇㄻㄴㅇㄹㅇㄴㅁㄻ.
 - **team member 🤭 최재권** : ㅁㄴㄻㄴㅇㄹㄴㅁㅇㄹㄴㅇㅁㄹㅇㄴㄻ.
