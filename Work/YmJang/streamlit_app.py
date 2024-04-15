@@ -117,6 +117,9 @@ def main():
                 lower = [40,40,40]
                 upper = [80,255,255]
             elif color_selection == "Black":
+                #클릭한 HSV 색상:  [ 89 255  84]
+                # lower = [79, 215, 34]
+                # upper = [99, 255, 134]
                 lower = [0, 0, 0]
                 upper = [180, 255, 50]
             else:
