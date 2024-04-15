@@ -88,7 +88,7 @@ def draw_boxes(image_path, detections, words_to_find, save_path):
                 continue
             start = (vertices[0]['x'], vertices[0]['y'])
             end = (vertices[2]['x'], vertices[2]['y'])
-            draw.rectangle([start, end], outline='red', width=2)
+            draw.rectangle([start, end], outline='green', width=2)
 
     if image.mode == 'RGBA':
         image = image.convert('RGB')
@@ -99,7 +99,7 @@ def draw_boxes(image_path, detections, words_to_find, save_path):
 # 메인 실행 함수
 def main():
     csv_file_path = "C:\\PjtCCC\\Work\\JGChoi\\words3.csv"
-    image_path = "C:\\PjtCCC\\Work\\JGChoi\\위슬로_섭취량.png"
+    image_path = "C:\\PjtCCC\\Work\\JGChoi\\비주얼_영양성분.png"
     save_path = "C:\\PjtCCC\\Work\\JGChoi\\path_to_save_image.jpg"
 
     words_to_find = read_words_from_csv(csv_file_path)
