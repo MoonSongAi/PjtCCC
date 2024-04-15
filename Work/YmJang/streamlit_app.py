@@ -24,6 +24,8 @@ def delete_image(image_index):
     if 0 <= image_index < len(st.session_state.saved_images):
         del st.session_state.saved_images[image_index]
         del st.session_state.images_list[image_index]
+        del st.session_state.process_images[image_index]
+        del st.session_state.process_list[image_index]
         # 이미지 리스트 변경 후 다시 이미지와 버튼 표시를 위해 페이지 갱신
         if len(st.session_state.images_list) == 0:
             st.session_state.anal_button_click = False
@@ -32,7 +34,7 @@ def delete_image(image_index):
 def main():
     
     # Google Cloud 자격 증명 파일의 경로를 사용하여 클래스 초기화
-    detector = TextDetectionAndComparison("C:\\keys\\feisty-audio-420101-460dfe33e2cb.json")
+    # detector = TextDetectionAndComparison("C:\\keys\\feisty-audio-420101-460dfe33e2cb.json")
 
 
     DB_INDEX = "VECTOR_DB_INDEX"
@@ -86,7 +88,7 @@ def main():
     if 'images_list' not in st.session_state:
         st.session_state.images_list = []
     if 'process_list' not in st.session_state:
-            st.session_state.process_list = []
+        st.session_state.process_list = []
     if 'loaded_image' not in st.session_state:
         st.session_state.loaded_image = None
     if 'anal_image' not in st.session_state:
@@ -105,8 +107,11 @@ def main():
             default_index = colors.index(default_color)  # 'Black'의 인덱스 찾기
             color_selection = st.selectbox("Select line color", colors, index=default_index)
             if color_selection == "Red":
-                lower = [0, 100, 100] 
-                upper = [10, 255, 255]
+                # 클릭한 HSV 색상:  [174 250 209]
+                lower =  [164,210,159]
+                upper =  [179,255,255]
+                # lower = [0, 100, 100] 
+                # upper = [10, 255, 255]
             elif color_selection == "Green":
                 lower = [40,40,40]
                 upper = [80,255,255]
@@ -118,10 +123,10 @@ def main():
                 upper = [80,255,255]
             elif color_selection == "Black":
                 #클릭한 HSV 색상:  [ 89 255  84]
-                # lower = [79, 215, 34]
-                # upper = [99, 255, 134]
-                lower = [0, 0, 0]
-                upper = [180, 255, 50]
+                lower = [79, 215, 34]
+                upper = [99, 255, 134]
+                # lower = [0, 0, 0]
+                # upper = [180, 255, 50]
             else:
                 lower = [0,100,100]
                 upper = [10,255,255]
@@ -198,21 +203,13 @@ def main():
             st.session_state.canvas_image_data = cropped_img
             # _ = cropped_img.thumbnail((300,300))
 
-            # 버튼 배치를 위한 컬럼 생성
             col1, col2  = st.columns(2)
             with col1:
-                # 이미지 저장 버튼
-                save_image = st.button("Save cropped image")
-            with col2:
                 # 이미지 회전 버튼
                 rotate_image = st.button("Rotate cropped image")
-            if save_image:
-                save_name = save_image_to_folder(st.session_state.canvas_image_data)
-                # 저장된 이미지 리스트에 이미지 추가
-                st.session_state.saved_images.append(st.session_state.canvas_image_data)
-                st.session_state.images_list.append(save_name)
-
- 
+            with col2:
+                # 이미지 저장 버튼
+                save_image = st.button("Save cropped image")
             if rotate_image:
                 st.session_state.rotation_angle += 90   # 회전 각도 업데이트
                 st.session_state.rotation_angle %= 360  # 360도가 되면 0으로 리셋
@@ -220,7 +217,14 @@ def main():
             st.session_state.canvas_image_data = st.session_state.canvas_image_data.rotate(
                                                               st.session_state.rotation_angle,
                                                               expand = True)
-            # print(f"st.session_state.rotation_angle={st.session_state.rotation_angle}")
+            print(f"st.session_state.rotation_angle={st.session_state.rotation_angle}")
+
+            if save_image:
+                save_name = save_image_to_folder(st.session_state.canvas_image_data)
+                # 저장된 이미지 리스트에 이미지 추가
+                st.session_state.saved_images.append(st.session_state.canvas_image_data)
+                st.session_state.images_list.append(save_name)
+
 
             st.write("***_:blue[Preview Cropped Image]_***")
             st.image(st.session_state.canvas_image_data)
@@ -259,14 +263,6 @@ def main():
                     save_name = save_image_to_folder(processed_image)
                     st.session_state.process_list.append(save_name)
 
-                    
-                    # 처리된 이미지를 저장합니다. 이미지 리스트가 업데이트되면서, 해당하는 zoom_key도 동기화되어야 합니다.
-                    # 여기서는 리사이즈하지 않고 원본 크기를 유지합니다.
-                    # if len(st.session_state.process_images) > idx:
-                    #     st.session_state.process_images[idx] = processed_image
-                    # else:
-                    #     st.session_state.process_images.append(processed_image)
-
                     zoom_key = f"zoom_{idx}"
                     
                     with cols[idx]:
@@ -282,24 +278,25 @@ def main():
                         
                         # 확대 상태에 따라 이미지를 표시하거나 숨깁니다.
                         if st.session_state[zoom_key]:
-                            st.image(st.session_state.process_images[idx], width=400)
+                            # 원본 이미지를 확대하여 표시
+                            st.image(st.session_state.processed_images[idx], width=400)
+
 
                 st.write("***_:blue[OCR]_***")
-                # Google Cloud 자격 증명 파일의 경로를 사용하여 클래스 초기화
 
-                for idx, image_path in enumerate(st.session_state.images_list):
-                    text1 = detector.detect_text(image_path)
-                    text2 = detector.detect_text(st.session_state.process_list[idx])
-                    result = detector.determine_superior_text(text1, text2)
-                    print("비교 결과:", result)
+                # for idx, image_path in enumerate(st.session_state.images_list):
+                #     text1 = detector.detect_text(image_path)
+                #     text2 = detector.detect_text(st.session_state.process_list[idx])
+                #     result = detector.determine_superior_text(text1, text2)
+                #     print("비교 결과:", result)
 
-                st.write('원본 이미지')
-                st.write(text1)
-                st.write('-'*50)
-                st.write('전처리 이미지')
-                st.write(text2)
-                st.write('-'*50)
-                st.write("비교 결과:", result)
+                # st.write('원본 이미지')
+                # st.write(text1)
+                # st.write('-'*50)
+                # st.write('전처리 이미지')
+                # st.write(text2)
+                # st.write('-'*50)
+                # st.write("비교 결과:", result)
 ##########################################################################################################################chat
     # if not openai_api_key:
     #    openai_api_key = st.secrets["OpenAI_Key"]
@@ -322,12 +319,12 @@ def main():
 
     # with tab2:
     #     # 버튼에 표시될 내용을 리스트로 정의
-    #     button_labels = ["청정지역, 청정해역 임을 증명한는 서류는 ?", 
-    #                      "기능성원료의 인체적용시험 결과는 어떻게 인용해야 하나요?", 
-    #                      "타사의 심의자료 열람이 가능한가요?",
-    #                      "부당한 표시 또는 광고의 내용 이란?", 
-    #                      "혈당조정 기능성 원료는?", 
-    #                      "건강기능식품의 기능성 내용과 사례를 알려줘"]
+    #     button_labels = ["글자크기와 장평 가이드라인",
+                        #  "원산지 표시법",
+                        #  "굵게 표시해야하는 항목은 무엇이 있나요?",
+                        #  "영양정보 표시할때 주의사항은?",
+                        #  "원재료 표시 기준",
+                        #  "정보표시면 표시방법"]
     #         # 2행 3열 구조로 버튼을 배치하기 위한 인덱스
     #     if 'last_clicked' not in st.session_state:
     #         st.session_state['last_clicked'] = ''
