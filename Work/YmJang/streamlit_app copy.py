@@ -7,6 +7,7 @@ from langchain.memory import StreamlitChatMessageHistory
 from langchain_integration import is_vector_db ,load_langchain,  setup_langchain
 from analysis_image import save_image_to_folder ,load_to_image , \
                         get_image_base64,process_image_with_hsv_range 
+
 from OCR_visualization import plt_imshow, putText, detect_text, load_terms, \
                         load_special_characters, combine_boxes_for_specific_words_1, \
                         combine_boxes_for_specific_words_2, combine_boxes_for_specific_words_3,\
@@ -16,7 +17,6 @@ from text_detection_comparison import TextDetectionAndComparison
 from streamlit_cropper import st_cropper
 from PIL import Image
 import numpy as np
-import os
 
 
 # 이미지 삭제 함수
@@ -24,16 +24,16 @@ def delete_image(image_index):
     if 0 <= image_index < len(st.session_state.saved_images):
         del st.session_state.saved_images[image_index]
         del st.session_state.images_list[image_index]
-        del st.session_state.process_images[image_index]
-        del st.session_state.process_list[image_index]
         # 이미지 리스트 변경 후 다시 이미지와 버튼 표시를 위해 페이지 갱신
         if len(st.session_state.images_list) == 0:
             st.session_state.anal_button_click = False
         st.rerun()
 
 def main():
+        
     # Google Cloud 자격 증명 파일의 경로를 사용하여 클래스 초기화
-    detector = TextDetectionAndComparison("C:\\keys\\feisty-audio-420101-460dfe33e2cb.json")
+    # detector = TextDetectionAndComparison("C:\\keys\\feisty-audio-420101-460dfe33e2cb.json")
+    detector = TextDetectionAndComparison("C:\\Users\\user\\Desktop\\myccc-420108-7f52a40950c8.json")
 
 
     DB_INDEX = "VECTOR_DB_INDEX"
@@ -87,7 +87,7 @@ def main():
     if 'images_list' not in st.session_state:
         st.session_state.images_list = []
     if 'process_list' not in st.session_state:
-        st.session_state.process_list = []
+            st.session_state.process_list = []
     if 'loaded_image' not in st.session_state:
         st.session_state.loaded_image = None
     if 'anal_image' not in st.session_state:
@@ -98,6 +98,7 @@ def main():
         st.session_state.delete_request = False
     if 'vector_db' not in st.session_state:
         st.session_state.vector_db = is_vector_db(DB_INDEX)
+    
 
     with st.sidebar:
         with st.expander("Adjust HSV Threshold",expanded=False):
@@ -106,11 +107,8 @@ def main():
             default_index = colors.index(default_color)  # 'Black'의 인덱스 찾기
             color_selection = st.selectbox("Select line color", colors, index=default_index)
             if color_selection == "Red":
-                # 클릭한 HSV 색상:  [174 250 209]
-                lower =  [164,210,159]
-                upper =  [179,255,255]
-                # lower = [0, 100, 100] 
-                # upper = [10, 255, 255]
+                lower = [0, 100, 100] 
+                upper = [10, 255, 255]
             elif color_selection == "Green":
                 lower = [40,40,40]
                 upper = [80,255,255]
@@ -122,10 +120,10 @@ def main():
                 upper = [80,255,255]
             elif color_selection == "Black":
                 #클릭한 HSV 색상:  [ 89 255  84]
-                lower = [79, 215, 34]
-                upper = [99, 255, 134]
-                # lower = [0, 0, 0]
-                # upper = [180, 255, 50]
+                # lower = [79, 215, 34]
+                # upper = [99, 255, 134]
+                lower = [0, 0, 0]
+                upper = [180, 255, 50]
             else:
                 lower = [0,100,100]
                 upper = [10,255,255]
@@ -202,28 +200,29 @@ def main():
             st.session_state.canvas_image_data = cropped_img
             # _ = cropped_img.thumbnail((300,300))
 
+            # 버튼 배치를 위한 컬럼 생성
             col1, col2  = st.columns(2)
             with col1:
-                # 이미지 회전 버튼
-                rotate_image = st.button("Rotate cropped image")
-            with col2:
                 # 이미지 저장 버튼
                 save_image = st.button("Save cropped image")
-            if rotate_image:
-                st.session_state.rotation_angle -= 90   # 회전 각도 업데이트
-                st.session_state.rotation_angle %= 360  # 360도가 되면 0으로 리셋
-                # 현재 회전 각도에 따라 이미지 회전
-            st.session_state.canvas_image_data = st.session_state.canvas_image_data.rotate(
-                                                              st.session_state.rotation_angle,
-                                                              expand = True)
-            print(f"st.session_state.rotation_angle={st.session_state.rotation_angle}")
-
+            with col2:
+                # 이미지 회전 버튼
+                rotate_image = st.button("Rotate cropped image")
             if save_image:
                 save_name = save_image_to_folder(st.session_state.canvas_image_data)
                 # 저장된 이미지 리스트에 이미지 추가
                 st.session_state.saved_images.append(st.session_state.canvas_image_data)
                 st.session_state.images_list.append(save_name)
 
+ 
+            if rotate_image:
+                st.session_state.rotation_angle += 90   # 회전 각도 업데이트
+                st.session_state.rotation_angle %= 360  # 360도가 되면 0으로 리셋
+                # 현재 회전 각도에 따라 이미지 회전
+            st.session_state.canvas_image_data = st.session_state.canvas_image_data.rotate(
+                                                              st.session_state.rotation_angle,
+                                                              expand = True)
+            # print(f"st.session_state.rotation_angle={st.session_state.rotation_angle}")
 
             st.write("***_:blue[Preview Cropped Image]_***")
             st.image(st.session_state.canvas_image_data)
@@ -235,10 +234,9 @@ def main():
                 for idx, saved_image in enumerate(st.session_state.saved_images):
                     with cols[idx]:
                         # 썸네일 크기로 이미지 리사이즈
-                        thumbnail_images = st.session_state.saved_images[idx].copy()
                         st.caption(st.session_state.images_list[idx])
-                        thumbnail_images.thumbnail((200, 200))
-                        st.image(thumbnail_images, width=100)  # 썸네일 이미지 표시
+                        saved_image.thumbnail((200, 200))
+                        st.image(saved_image, width=100)  # 썸네일 이미지 표시
                         # 삭제 버튼 생성
                         if st.button(f'Delete {idx}', key=f"delete_{idx}"):
                             st.session_state.delete_request = True
@@ -259,11 +257,11 @@ def main():
                     if len(st.session_state.process_list)-1 < idx:  #새로운 이미지가 추가된 경우만
                         image = Image.open(img_path).convert('RGB')
                         processed_image = process_image_with_hsv_range(image, lower_hsv, upper_hsv)
-                    
-                        # 저장된 이미지 리스트에 이미지 추가
+
                         st.session_state.process_images.append(processed_image)
                         save_name = save_image_to_folder(processed_image)
                         st.session_state.process_list.append(save_name)
+
 
                 if len(st.session_state.process_list) > 0:
                     # print(st.session_state.process_list)
@@ -282,114 +280,99 @@ def main():
                             
                             # 확대 상태에 따라 이미지를 표시하거나 숨깁니다.
                             if st.session_state[zoom_key]:
-                                st.image(st.session_state.process_images[idx], width=700)
-
-
+                                st.image(st.session_state.process_images[idx], width=400)
 
                 st.write("***_:blue[OCR]_***")
+                # Google Cloud 자격 증명 파일의 경로를 사용하여 클래스 초기화
 
-                for idx, image_path in enumerate(st.session_state.images_list):
-                    text1 = detector.detect_text(image_path)
-                    text2 = detector.detect_text(st.session_state.process_list[idx])
-                    result = detector.determine_superior_text(text1, text2)
-                    print("비교 결과:", result)
+    if not openai_api_key:
+       openai_api_key = st.secrets["OpenAI_Key"]
+       if not openai_api_key:
+          st.info("Please add your OpenAI API key to continue.")
+          st.stop()
 
-                st.write('원본 이미지')
-                st.write(text1)
-                st.write('-'*50)
-                st.write('전처리 이미지')
-                st.write(text2)
-                st.write('-'*50)
-                st.write("비교 결과:", result)
-##########################################################################################################################chat
-    # if not openai_api_key:
-    #    openai_api_key = st.secrets["OpenAI_Key"]
-    #    if not openai_api_key:
-    #       st.info("Please add your OpenAI API key to continue.")
-    #       st.stop()
+    if load_lang:
+        conversation_chain = load_langchain(DB_INDEX,device_option,openai_api_key,model_name)
+        st.session_state.conversation = conversation_chain
+        st.session_state.processComplete = True
 
-    # if load_lang:
-    #     conversation_chain = load_langchain(DB_INDEX,device_option,openai_api_key,model_name)
-    #     st.session_state.conversation = conversation_chain
-    #     st.session_state.processComplete = True
+    if process_lang:
+        conversation_chain = setup_langchain(st , tab3, 
+                                            uploaded_files,
+                                            chunk_size,chunk_overlap,device_option,
+                                            openai_api_key,model_name)
+        st.session_state.conversation = conversation_chain
+        st.session_state.processComplete = True
 
-    # if process_lang:
-    #     conversation_chain = setup_langchain(st , tab3, 
-    #                                         uploaded_files,
-    #                                         chunk_size,chunk_overlap,device_option,
-    #                                         openai_api_key,model_name)
-    #     st.session_state.conversation = conversation_chain
-    #     st.session_state.processComplete = True
+    with tab2:
+        # 버튼에 표시될 내용을 리스트로 정의
+        button_labels = ["청정지역, 청정해역 임을 증명한는 서류는 ?", 
+                         "기능성원료의 인체적용시험 결과는 어떻게 인용해야 하나요?", 
+                         "타사의 심의자료 열람이 가능한가요?",
+                         "부당한 표시 또는 광고의 내용 이란?", 
+                         "혈당조정 기능성 원료는?", 
+                         "건강기능식품의 기능성 내용과 사례를 알려줘"]
+            # 2행 3열 구조로 버튼을 배치하기 위한 인덱스
+        if 'last_clicked' not in st.session_state:
+            st.session_state['last_clicked'] = ''
 
-    # with tab2:
-    #     # 버튼에 표시될 내용을 리스트로 정의
-    #     button_labels = ["글자크기와 장평 가이드라인",
-                        #  "원산지 표시법",
-                        #  "굵게 표시해야하는 항목은 무엇이 있나요?",
-                        #  "영양정보 표시할때 주의사항은?",
-                        #  "원재료 표시 기준",
-                        #  "정보표시면 표시방법"]
-    #         # 2행 3열 구조로 버튼을 배치하기 위한 인덱스
-    #     if 'last_clicked' not in st.session_state:
-    #         st.session_state['last_clicked'] = ''
+        idx = 0
+        # 두 행을 생성
+        for i in range(2):  # 두 행
+            cols = st.columns(3)
+            for col in cols:  # 각 행에 3개의 열
+                if idx < len(button_labels):
+                    button_key = f"button_{idx}"
+                    if col.button(button_labels[idx], key=button_key):
+                        # 버튼 클릭 시, 해당 버튼의 레이블을 저장
+                        st.session_state['last_clicked'] = button_labels[idx]
+                    idx += 1
 
-    #     idx = 0
-    #     # 두 행을 생성
-    #     for i in range(2):  # 두 행
-    #         cols = st.columns(3)
-    #         for col in cols:  # 각 행에 3개의 열
-    #             if idx < len(button_labels):
-    #                 button_key = f"button_{idx}"
-    #                 if col.button(button_labels[idx], key=button_key):
-    #                     # 버튼 클릭 시, 해당 버튼의 레이블을 저장
-    #                     st.session_state['last_clicked'] = button_labels[idx]
-    #                 idx += 1
+        if 'messages' not in st.session_state:
+            st.session_state['messages'] = [{"role": "assistant", 
+                                            "content": "안녕하세요! 표시디자인과 관련된 궁금하신 것이 있으면 무었이든 질문 하세요!"}]
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
 
-    #     if 'messages' not in st.session_state:
-    #         st.session_state['messages'] = [{"role": "assistant", 
-    #                                         "content": "안녕하세요! 표시디자인과 관련된 궁금하신 것이 있으면 무었이든 질문 하세요!"}]
-    #     for message in st.session_state.messages:
-    #         with st.chat_message(message["role"]):
-    #             st.markdown(message["content"])
+        history = StreamlitChatMessageHistory(key="chat_messages")
 
-    #     history = StreamlitChatMessageHistory(key="chat_messages")
+        # Chat logic
+        if st.session_state['last_clicked'] != '':
+            query_text =  st.session_state['last_clicked']
+            st.session_state['last_clicked'] = ''
+            query = query_text
+            st.chat_input(query_text)
+        else:
+            query_text = "질문을 입력해주세요."
+            query = st.chat_input(query_text)
 
-    #     # Chat logic
-    #     if st.session_state['last_clicked'] != '':
-    #         query_text =  st.session_state['last_clicked']
-    #         st.session_state['last_clicked'] = ''
-    #         query = query_text
-    #         st.chat_input(query_text)
-    #     else:
-    #         query_text = "질문을 입력해주세요."
-    #         query = st.chat_input(query_text)
+        if query:
+            st.session_state.messages.append({"role": "user", "content": query})
 
-    #     if query:
-    #         st.session_state.messages.append({"role": "user", "content": query})
+            with st.chat_message("user"):
+                st.markdown(query)
 
-    #         with st.chat_message("user"):
-    #             st.markdown(query)
+            with st.chat_message("assistant"):
+                chain = st.session_state.conversation
+                if chain is None:
+                    st.warning('학습된 정보가 없습니다.')
+                    st.stop()
 
-    #         with st.chat_message("assistant"):
-    #             chain = st.session_state.conversation
-    #             if chain is None:
-    #                 st.warning('학습된 정보가 없습니다.')
-    #                 st.stop()
+                with st.spinner("Thinking..."):
+                    result = chain({"question": query})
+                    with get_openai_callback() as cb:
+                        st.session_state.chat_history = result['chat_history']
+                    response = result['answer']
+                    st.session_state.messages.append({"role": "assistant", "content": response})
 
-    #             with st.spinner("Thinking..."):
-    #                 result = chain({"question": query})
-    #                 with get_openai_callback() as cb:
-    #                     st.session_state.chat_history = result['chat_history']
-    #                 response = result['answer']
-    #                 st.session_state.messages.append({"role": "assistant", "content": response})
+                    source_documents = result['source_documents']
 
-    #                 source_documents = result['source_documents']
-
-    #                 st.markdown(response)
-    #                 with st.expander("참고 문서 확인"):
-    #                     st.markdown(source_documents[0].metadata['source'], help = source_documents[0].page_content)
-    #                     st.markdown(source_documents[1].metadata['source'], help = source_documents[1].page_content)
-    #                     st.markdown(source_documents[2].metadata['source'], help = source_documents[2].page_content)
+                    st.markdown(response)
+                    with st.expander("참고 문서 확인"):
+                        st.markdown(source_documents[0].metadata['source'], help = source_documents[0].page_content)
+                        st.markdown(source_documents[1].metadata['source'], help = source_documents[1].page_content)
+                        st.markdown(source_documents[2].metadata['source'], help = source_documents[2].page_content)
 
 
 if __name__ == '__main__':
