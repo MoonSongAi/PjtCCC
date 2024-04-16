@@ -9,16 +9,16 @@
 
 - 🌱 We're currently learning **The process of developing AI services using open source and platforms**
 - **team leader 😁 김동민** : 개발팀 리더로 역할을 수행 중으로 이미지 전처리, ppt, 회의록을 작성하고 있습니다. 데이터 분석을 활용하는 쪽에 관심 있습니다.([Work/DmKim](https://github.com/MoonSongAi/PjtCCC/tree/master/Work/DmKim))
-- **team member 🤪 백혜리** : Google Vision API , Naver Clovar OCR 등 다양한 Open flatform AI 기술을 시험적으로 사용해 봤습니다. 반도체 기업에 관심이 많아요.([Work/HrBaek](https://github.com/MoonSongAi/PjtCCC/tree/master/Work/JHrBaek))
-- **team member 😉 윤도하** : 젊고 유능한 젊은 팀원들과 잘 지내 볼려고 노력 중 입니다. OpenCV와 segmentation 그리고 기업의 정형 , 비정형 데이타를 오픈 플랫폼 AI 서비스로 가공하는 서비스에 관심이 많습니다.([Work/DhYoon](https://github.com/MoonSongAi/PjtCCC/tree/master/Work/DhYoon))
-- **team member 🥵 이예림** : Chat GPT와 함께 코딩과 친해지는 중인 코린이입니다. Chunck와 vector DB를 활용하고 , 다양한 문서 포맷을 파싱해서 vector화 시키는 다양한 LangChain 관련 기술 경험 중입니다.([Work/YeRim](https://github.com/MoonSongAi/PjtCCC/tree/master/Work/YeRim))
-- **team member 🤠 장유미** : streamlit 과 Python 함수화 과정 헤메고 있습니다.([Work/YmJang](https://github.com/MoonSongAi/PjtCCC/tree/master/Work/YmJang))
-- **team member 🤭 최재권** : 이미지 segmentation 달인이 되겠습니다. 유미 여사님 열심히 도와 착하게 살고 싶습니다.([Work/JGChoi](https://github.com/MoonSongAi/PjtCCC/tree/master/Work/JGChoi))
+- **member 🤪 백혜리** : Google Vision API , Naver Clovar OCR 등 다양한 Open flatform AI 기술을 시험적으로 사용해 봤습니다. 반도체 기업에 관심이 많아요.([Work/HrBaek](https://github.com/MoonSongAi/PjtCCC/tree/master/Work/JHrBaek))
+- **member 😉 윤도하** : 젊고 유능한 젊은 팀원들과 잘 지내 볼려고 노력 중 입니다. OpenCV와 segmentation 그리고 기업의 정형 , 비정형 데이타를 오픈 플랫폼 AI 서비스로 가공하는 서비스에 관심이 많습니다.([Work/DhYoon](https://github.com/MoonSongAi/PjtCCC/tree/master/Work/DhYoon))
+- **member 🥵 이예림** : Chat GPT와 함께 코딩과 친해지는 중인 코린이입니다. Chunck와 vector DB를 활용하고 , 다양한 문서 포맷을 파싱해서 vector화 시키는 다양한 LangChain 관련 기술 경험 중입니다.([Work/YeRim](https://github.com/MoonSongAi/PjtCCC/tree/master/Work/YeRim))
+- **member 🤠 장유미** : streamlit 과 Python 함수화 과정 헤메고 있습니다.([Work/YmJang](https://github.com/MoonSongAi/PjtCCC/tree/master/Work/YmJang))
+- **member 🤭 최재권** : 이미지 segmentation 달인이 되겠습니다. 유미 여사님 열심히 도와 착하게 살고 싶습니다.([Work/JGChoi](https://github.com/MoonSongAi/PjtCCC/tree/master/Work/JGChoi))
 - **team member 😎 황지의** : 다양한 이미지 OCR 처리 , 단어 , 특수문자등 특화된 도메인에 적용 가능한 사전기능등 OCR 이미지 처리에 자신이 있습니다.([Work/JuHwang](https://github.com/MoonSongAi/PjtCCC/tree/master/Work/JuHwang))
 
 ## 2D 도면 이미지를 3D 입체 박스로 렌더링 하는 Preview 
 ### 다음 이미지를 클릭하세요
-### (MoonSongiT의 Youtube로 연결 됩니다. 구독 좋아요 !!!.)
+#### (MoonSongiT의 Youtube로 연결 됩니다. 구독 좋아요 !!!.)
 
 [![3D modeling](https://img.youtube.com/vi/IPCwKGRjqHM/0.jpg)](https://youtu.be/IPCwKGRjqHM)
 ![프로젝트 이미지](https://github.com/MoonSongAi/PjtCCC/blob/master/image.png?raw=true)
