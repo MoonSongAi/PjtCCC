@@ -16,6 +16,7 @@
 - **team member 🤭 최재권** : 이미지 segmentation 달인이 되겠습니다. 유미 여사님 열심히 도와 착하게 살고 싶습니다.([Work/JGChoi](https://github.com/MoonSongAi/PjtCCC/tree/master/Work/JGChoi))
 - **team member 😎 황지의** : 다양한 이미지 OCR 처리 , 단어 , 특수문자등 특화된 도메인에 적용 가능한 사전기능등 OCR 이미지 처리에 자신이 있습니다.([Work/JuHwang](https://github.com/MoonSongAi/PjtCCC/tree/master/Work/JuHwang))
 
+[![3D modeling](https://img.youtube.com/vi/IPCwKGRjqHM/0.jpg)](https://youtu.be/IPCwKGRjqHM)
 ![프로젝트 이미지](https://github.com/MoonSongAi/PjtCCC/blob/master/image.png?raw=true)
 
 - 📫 How to reach me **MoonSongAi@gmail.com**
