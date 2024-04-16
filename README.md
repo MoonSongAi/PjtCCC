@@ -16,6 +16,8 @@
 - **team member 🤭 최재권** : 이미지 segmentation 달인이 되겠습니다. 유미 여사님 열심히 도와 착하게 살고 싶습니다.([Work/JGChoi](https://github.com/MoonSongAi/PjtCCC/tree/master/Work/JGChoi))
 - **team member 😎 황지의** : 다양한 이미지 OCR 처리 , 단어 , 특수문자등 특화된 도메인에 적용 가능한 사전기능등 OCR 이미지 처리에 자신이 있습니다.([Work/JuHwang](https://github.com/MoonSongAi/PjtCCC/tree/master/Work/JuHwang))
 
+## 2D 도면 이미지를 3D 입체 박스로 렌더링 하는 Preview 동영상을 볼려면 다음 이지를 클릭하세요(MoonSongiT의 Youtube로 연결 됩니다. 구독 좋아요도 부탁 드립니다.)
+
 [![3D modeling](https://img.youtube.com/vi/IPCwKGRjqHM/0.jpg)](https://youtu.be/IPCwKGRjqHM)
 ![프로젝트 이미지](https://github.com/MoonSongAi/PjtCCC/blob/master/image.png?raw=true)
 
