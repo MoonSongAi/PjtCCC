@@ -8,66 +8,59 @@ def read_words_from_csv(csv_file_path):
     words_df = pd.read_csv(csv_file_path)
     return words_df['Word'].tolist()
 
-def combine_boxes_for_specific_words_1(texts, word_sequence):
+def combine_boxes_for_specific_words_1(texts, sequences):
     combined_texts = []
-    skip_next = False
-    for i in range(len(texts) - 1):
-        if skip_next:
-            skip_next = False
-            continue
-        text = texts[i]
-        next_text = texts[i + 1]
-        description = text.description
-        next_description = next_text.description
-        if description == word_sequence[0] and next_description == word_sequence[1]:
-            combined_box = {
-                "description": description + next_description,
-                "boundingPoly": {
-                    "vertices": [
-                        {'x': min(text.bounding_poly.vertices[0].x, next_text.bounding_poly.vertices[0].x),
-                         'y': min(text.bounding_poly.vertices[0].y, next_text.bounding_poly.vertices[0].y)},
-                        {'x': max(text.bounding_poly.vertices[1].x, next_text.bounding_poly.vertices[1].x),
-                         'y': min(text.bounding_poly.vertices[1].y, next_text.bounding_poly.vertices[1].y)},
-                        {'x': max(text.bounding_poly.vertices[2].x, next_text.bounding_poly.vertices[2].x),
-                         'y': max(text.bounding_poly.vertices[2].y, next_text.bounding_poly.vertices[2].y)},
-                        {'x': min(text.bounding_poly.vertices[3].x, next_text.bounding_poly.vertices[3].x),
-                         'y': max(text.bounding_poly.vertices[3].y, next_text.bounding_poly.vertices[3].y)}
-                    ]
-                }
-            }
-            combined_texts.append(combined_box)
-            skip_next = True
-        else:
+    i = 0
+    while i < len(texts):
+        matched = False
+        for sequence in sequences:
+            if i + len(sequence) <= len(texts) and all(texts[i + j].description == sequence[j] for j in range(len(sequence))):
+                combined_description = ''.join(texts[i + j].description for j in range(len(sequence)))
+                vertices = [
+                    {'x': min(texts[i + j].bounding_poly.vertices[0].x for j in range(len(sequence))),
+                     'y': min(texts[i + j].bounding_poly.vertices[0].y for j in range(len(sequence)))},
+                    {'x': max(texts[i + j].bounding_poly.vertices[2].x for j in range(len(sequence))),
+                     'y': max(texts[i + j].bounding_poly.vertices[2].y for j in range(len(sequence)))}
+                ]
+                combined_texts.append({
+                    "description": combined_description,
+                    "boundingPoly": {"vertices": [
+                        {'x': vertices[0]['x'], 'y': vertices[0]['y']},
+                        {'x': vertices[1]['x'], 'y': vertices[0]['y']},
+                        {'x': vertices[1]['x'], 'y': vertices[1]['y']},
+                        {'x': vertices[0]['x'], 'y': vertices[1]['y']}
+                    ]}
+                })
+                i += len(sequence) - 1
+                matched = True
+                break
+        if not matched:
             combined_texts.append({
-                "description": text.description,
+                "description": texts[i].description,
                 "boundingPoly": {
-                    "vertices": [{'x': vertex.x, 'y': vertex.y} for vertex in text.bounding_poly.vertices]
+                    "vertices": [{'x': vertex.x, 'y': vertex.y} for vertex in texts[i].bounding_poly.vertices]
                 }
             })
-
-    if not skip_next and texts:
-        last_text = texts[-1]
-        combined_texts.append({
-            "description": last_text.description,
-            "boundingPoly": {
-                "vertices": [{'x': vertex.x, 'y': vertex.y} for vertex in last_text.bounding_poly.vertices]
-            }
-        })
+        i += 1
 
     return combined_texts
 
+
 def detect_text(image_path):
     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "C:\\feisty-enigma-418609-e0cd3a1f9381.json"
-
     client = vision.ImageAnnotatorClient()
     with io.open(image_path, 'rb') as image_file:
         content = image_file.read()
-
     image = vision.Image(content=content)
     response = client.text_detection(image=image)
-    texts = response.text_annotations
+    texts = response.text_annotations[1:]
 
-    combined_texts = combine_boxes_for_specific_words_1(texts, ["프랑스", "산"])
+    sequences = [["프랑스", "산"],["칼슘","과"],["비타민","K"],["비타민","D"],["비타민","K"],["구연","산삼","나트륨"],["프","랑스","산"],["해조","칼슘"],["산화","마그네슘"],
+                 ["산화","아연"],["중성","지방"],["셀룰로스","칼슘"],["칼슘","혼합"],["탄산","칼슘"],["스테아린산","마그네슘"],["(","비타민K"],
+                 ["건강","기능","식품","유통","전문","판매원"],["건강","기능","식품","전문","제조원"],["발효","마그네슘"],["산호","칼슘"],["유통","전문","판매원"],
+                 ["안심","칼슘"],["마그네슘","디"],["열","량"],["카제인","나트륨"],["인산","나트륨"]]
+                
+    combined_texts = combine_boxes_for_specific_words_1(texts, sequences)
 
     print("OCR Results:")
     for detection in combined_texts:
@@ -99,7 +92,7 @@ def draw_boxes(image_path, detections, words_to_find, save_path):
 # 메인 실행 함수
 def main():
     csv_file_path = "C:\\PjtCCC\\Work\\JGChoi\\words3.csv"
-    image_path = "C:\\PjtCCC\\Work\\JGChoi\\비주얼_영양성분.png"
+    image_path = "C:\PjtCCC\Work\JGChoi\위슬로_1.png"
     save_path = "C:\\PjtCCC\\Work\\JGChoi\\path_to_save_image.jpg"
 
     words_to_find = read_words_from_csv(csv_file_path)
