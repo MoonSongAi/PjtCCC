@@ -11,38 +11,40 @@ from analysis_image import (
 )
 
 # final.py에서 필요한 함수나 클래스를 가져옴
-from final import (
-    combine_boxes_for_specific_words_1,
-    combine_boxes_for_specific_words_2,
-    combine_boxes_for_specific_words_3,
-    correct_and_visualize,
-    detect_text,
-    draw_bounding_box,
-    load_special_characters,
-    load_terms,
-    plt_imshow,
-    putText,
-)
+# from final import (
+#     combine_boxes_for_specific_words_1,
+#     combine_boxes_for_specific_words_2,
+#     combine_boxes_for_specific_words_3,
+#     correct_and_visualize,
+#     detect_text,
+#     draw_bounding_box,
+#     load_special_characters,
+#     load_terms,
+#     plt_imshow,
+#     putText,
+# )
 from langchain.memory import StreamlitChatMessageHistory
 
 # from streamlit_chat import message
 from langchain_community.callbacks import get_openai_callback
 from langchain_integration import is_vector_db, load_langchain, setup_langchain
-from OCR_visualization import (
-    combine_boxes_for_specific_words_1,
-    combine_boxes_for_specific_words_2,
-    combine_boxes_for_specific_words_3,
-    correct_and_visualize,
-    detect_text,
-    draw_bounding_box,
-    load_special_characters,
-    load_terms,
-    plt_imshow,
-    putText,
-)
+
+# from OCR_visualization import (
+#     combine_boxes_for_specific_words_1,
+#     combine_boxes_for_specific_words_2,
+#     combine_boxes_for_specific_words_3,
+#     correct_and_visualize,
+#     detect_text,
+#     draw_bounding_box,
+#     load_special_characters,
+#     load_terms,
+#     plt_imshow,
+#     putText,
+# )
 from PIL import Image
 from streamlit_cropper import st_cropper
-from text_detection_comparison import TextDetectionAndComparison
+
+# from text_detection_comparison import TextDetectionAndComparison
 
 
 # 이미지 삭제 함수
