@@ -308,7 +308,7 @@ def correct_and_visualize(image_path, texts, correction_dict_1, correction_dict_
     img_combined = np.hstack((img_with_border, roi_img_with_border))
 
     # Save the combined image to a file
-    combined_image_path = './combined_image.jpg'
+    combined_image_path = 'Work\\HrBaek\\combined_image.jpg'
     cv2.imwrite(combined_image_path, img_combined)
 
     # Return the path where the combined image is saved
@@ -407,8 +407,8 @@ def wrap_text(text, font, max_width):
     return wrapped_lines
 
 # 이미지 로딩
-image_path = './combined_image.jpg'  # 이미지 파일의 경로
-original_image = Image.open(image_path)
+# image_path = 'Work\\HrBaek\\combined_image.jpg'  # 이미지 파일의 경로
+original_image = Image.open(combined_image_path)
 original_width, original_height = original_image.size
 draw = ImageDraw.Draw(original_image)
 image_width, image_height = original_image.size
@@ -451,25 +451,6 @@ for line in combined_text:
     current_y += line_height  # 다음 텍스트 줄의 y 위치 설정
 
 # 이미지 저장
-output_image_path = 'result_with_text2.jpg'
+output_image_path = 'Work\\HrBaek\\result_with_text.jpg'
 new_image.save(output_image_path)
 
-# 새 이미지의 높이 계산
-line_height = font.getsize('텍스트')[1] + 10  # 줄 간격 포함
-new_height = original_height + line_height * len(combined_text)
-
-# 새 이미지 생성 및 원본 이미지 붙이기
-new_image = Image.new('RGB', (original_width, new_height), 'white')
-new_image.paste(original_image, (0, 0))
-
-# 텍스트 그리기
-draw = ImageDraw.Draw(new_image)
-current_y = original_height + 10  # 원본 이미지 아래에 텍스트 시작
-
-for line in combined_text:
-    draw.text((10, current_y), line, fill='black', font=font)
-    current_y += line_height  # 다음 텍스트 줄의 y 위치 설정
-
-# 이미지 저장
-output_image_path = 'result_with_text.jpg'
-new_image.save(output_image_path)
