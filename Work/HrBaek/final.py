@@ -319,14 +319,14 @@ def correct_and_visualize(image_path, texts, correction_dict_1, correction_dict_
 
 
 # 예제 사용법 (이 부분은 실제 코드에 맞게 조정 필요)
-correction_dict_1 = load_terms('맞춤법용어집_주의어.csv')
-correction_dict_2 = load_terms('맞춤법용어집_붙여쓰기.csv')
+correction_dict_1 = load_terms('Work\\HrBaek\\맞춤법용어집_주의어.csv')
+correction_dict_2 = load_terms('Work\\HrBaek\\맞춤법용어집_붙여쓰기.csv')
 # correction_dict_3 = load_terms('C:\\Users\\bluecom010\\Desktop\\지의\\24_03_22_최종프로젝트\\맞춤법\\맞춤법용어집_띄어쓰기.csv')
-correction_dict_3 = load_terms('맞춤법용어집_띄어쓰기_보류.csv')
-special_chars_2 = load_special_characters('맞춤법용어집_붙여쓰기_특정문자.csv')
-special_chars_3 = load_special_characters('맞춤법용어집_띄어쓰기_특정문자.csv')
+correction_dict_3 = load_terms('Work\\HrBaek\\맞춤법용어집_띄어쓰기_보류.csv')
+special_chars_2 = load_special_characters('Work\\HrBaek\\맞춤법용어집_붙여쓰기_특정문자.csv')
+special_chars_3 = load_special_characters('Work\\HrBaek\\맞춤법용어집_띄어쓰기_특정문자.csv')
 # image_path = '../../OCR_test/test16.png'
-image_path = 'test_img\Test6.png'
+image_path = 'Work\\HrBaek\\test_final_2.png'
 # image_path = 'C:\\Users\\bluecom010\\Desktop\\지의\\24_03_22_최종프로젝트\\OCR_test\\test_final_2.png'
 texts = detect_text(image_path)  # detect_text 함수로부터 얻은 텍스트
 # texts_rev1 = combine_boxes_for_specific_words_1(texts, ["유통", "기한"])
@@ -352,7 +352,7 @@ import pandas as pd
 from openai import OpenAI
 
 # CSV 파일을 DataFrame으로 불러옵니다.
-corrections_df = pd.read_csv('맞춤법용어집_주의어.csv')
+corrections_df = pd.read_csv('Work\\HrBaek\\맞춤법용어집_주의어.csv')
 
 # 'original'과 'replacement' 열을 각각 리스트로 변환합니다.
 originals = corrections_df['잘못된 표현'].tolist()
