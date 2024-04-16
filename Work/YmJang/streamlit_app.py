@@ -11,7 +11,14 @@ from OCR_visualization import plt_imshow, putText, detect_text, load_terms, \
                         load_special_characters, combine_boxes_for_specific_words_1, \
                         combine_boxes_for_specific_words_2, combine_boxes_for_specific_words_3,\
                         draw_bounding_box, correct_and_visualize
+           
 from text_detection_comparison import TextDetectionAndComparison
+
+# final.py에서 필요한 함수나 클래스를 가져옴
+from final import plt_imshow, putText, detect_text, load_terms, \
+                load_special_characters, combine_boxes_for_specific_words_1, \
+                combine_boxes_for_specific_words_2, combine_boxes_for_specific_words_3,\
+                draw_bounding_box, correct_and_visualize
 
 from streamlit_cropper import st_cropper
 from PIL import Image
@@ -84,10 +91,14 @@ def main():
         st.session_state.saved_images = []
     if 'process_images' not in st.session_state:
         st.session_state.process_images = []
+    if 'ocr_images' not in st.session_state:
+        st.session_state.ocr_images = []
     if 'images_list' not in st.session_state:
         st.session_state.images_list = []
     if 'process_list' not in st.session_state:
         st.session_state.process_list = []
+    if 'ocr_list' not in st.session_state:
+        st.session_state.ocr_list = []
     if 'loaded_image' not in st.session_state:
         st.session_state.loaded_image = None
     if 'anal_image' not in st.session_state:
@@ -189,6 +200,8 @@ def main():
             st.session_state.images_list = []
             st.session_state.process_images = []
             st.session_state.process_list = []
+            st.session_state.ocr_images = []
+            st.session_state.ocr_list = []
             del_buttons = []
 
             st.session_state.anal_image = False
@@ -301,6 +314,8 @@ def main():
                 st.write(text2)
                 st.write('-'*50)
                 st.write("비교 결과:", result)
+
+
 ##########################################################################################################################chat
     # if not openai_api_key:
     #    openai_api_key = st.secrets["OpenAI_Key"]
