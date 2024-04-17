@@ -4,10 +4,12 @@ import pandas as pd
 from PIL import Image, ImageDraw
 import os
 
+## CSV파일 읽어내기
 def read_words_from_csv(csv_file_path):
     words_df = pd.read_csv(csv_file_path)
     return words_df['Word'].tolist()
 
+## 특정단어 찾아 박스그리기 
 def combine_boxes_for_specific_words_1(texts, sequences):
     combined_texts = []
     i = 0
@@ -45,7 +47,7 @@ def combine_boxes_for_specific_words_1(texts, sequences):
 
     return combined_texts
 
-
+## 구글OCR후 특정단어들 합치기 
 def detect_text(image_path):
     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "C:\\feisty-enigma-418609-e0cd3a1f9381.json"
     client = vision.ImageAnnotatorClient()
