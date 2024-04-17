@@ -27,4 +27,5 @@ conda activate langchain_st
 >>>pip install faiss-gpu
 #4/4
 >>>pip install docx2txt
-
+#4/17
+>>>pip install streamlit --upgrade

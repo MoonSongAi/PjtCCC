@@ -3,7 +3,6 @@ import streamlit as st
 # from streamlit_chat import message
 from langchain_community.callbacks import get_openai_callback
 from langchain.memory import StreamlitChatMessageHistory
-
 from langchain_integration import is_vector_db ,load_langchain,  setup_langchain
 from analysis_image import save_image_to_folder ,load_to_image , \
                         get_image_base64,process_image_with_hsv_range 
@@ -11,16 +10,9 @@ from OCR_visualization import plt_imshow, putText, detect_text, load_terms, \
                         load_special_characters, combine_boxes_for_specific_words_1, \
                         combine_boxes_for_specific_words_2, combine_boxes_for_specific_words_3,\
                         draw_bounding_box, correct_and_visualize
-           
 from text_detection_comparison import TextDetectionAndComparison
-
-# final.py에서 필요한 함수나 클래스를 가져옴
-from final import plt_imshow, putText, detect_text, load_terms, \
-                load_special_characters, combine_boxes_for_specific_words_1, \
-                combine_boxes_for_specific_words_2, combine_boxes_for_specific_words_3,\
-                draw_bounding_box, correct_and_visualize
-
 from streamlit_cropper import st_cropper
+from OCR_anal import specialDicForOCR , execute_OCR
 from PIL import Image
 import numpy as np
 import os
@@ -40,8 +32,7 @@ def delete_image(image_index):
 
 def main():
     # Google Cloud 자격 증명 파일의 경로를 사용하여 클래스 초기화
-    detector = TextDetectionAndComparison("C:\\keys\\feisty-audio-420101-460dfe33e2cb.json")
-
+    # detector = TextDetectionAndComparison("C:\\keys\\feisty-audio-420101-460dfe33e2cb.json")
 
     DB_INDEX = "VECTOR_DB_INDEX"
     st.set_page_config(
@@ -298,22 +289,32 @@ def main():
                                 st.image(st.session_state.process_images[idx], width=700)
 
 
+                # OCR을 위한 사전 준비 작업
+                myDic = specialDicForOCR()
 
-                st.write("***_:blue[OCR]_***")
+                # processing_list에 있는 각 이미지 파일에 대해 OCR 실행
+                for image_path in st.session_state.process_list:
+                    # OCR 함수 실행
+                    ret_image = execute_OCR(myDic, image_path)
+                    
+                    # 결과 이미지 출력
+                    st.image(ret_image, caption='OCR 결과 이미지')  # Streamlit에서 이미지 출력
 
-                for idx, image_path in enumerate(st.session_state.images_list):
-                    text1 = detector.detect_text(image_path)
-                    text2 = detector.detect_text(st.session_state.process_list[idx])
-                    result = detector.determine_superior_text(text1, text2)
-                    print("비교 결과:", result)
+                # st.write("***_:blue[OCR]_***")
 
-                st.write('원본 이미지')
-                st.write(text1)
-                st.write('-'*50)
-                st.write('전처리 이미지')
-                st.write(text2)
-                st.write('-'*50)
-                st.write("비교 결과:", result)
+                # for idx, image_path in enumerate(st.session_state.images_list):
+                #     text1 = detector.detect_text(image_path)
+                #     text2 = detector.detect_text(st.session_state.process_list[idx])
+                #     result = detector.determine_superior_text(text1, text2)
+                #     print("비교 결과:", result)
+
+                # st.write('원본 이미지')
+                # st.write(text1)
+                # st.write('-'*50)
+                # st.write('전처리 이미지')
+                # st.write(text2)
+                # st.write('-'*50)
+                # st.write("비교 결과:", result)
 
 
 ##########################################################################################################################chat

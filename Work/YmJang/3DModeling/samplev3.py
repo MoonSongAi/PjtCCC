@@ -671,8 +671,6 @@ class MainWindow(QMainWindow): # 리네임(상속받을클래스:사실상상위
             self.layout.removeWidget(self.imgLabel)  # 기존 위젯 제거
             self.layout.removeWidget(self.maskImgLabel)
 
-
-        
         # imgLabel = QLabel()
         # edgesPixmap을 표시하는 라벨도 ClickableLabel로 만들어 클릭 가능하게 함
         # 원본 이미지의 너비와 높이를 저장
