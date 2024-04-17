@@ -7,17 +7,13 @@ from langchain.memory import StreamlitChatMessageHistory
 from langchain_integration import is_vector_db ,load_langchain,  setup_langchain
 from analysis_image import save_image_to_folder ,load_to_image , \
                         get_image_base64,process_image_with_hsv_range 
-from OCR_visualization import plt_imshow, putText, detect_text, load_terms, \
-                        load_special_characters, combine_boxes_for_specific_words_1, \
-                        combine_boxes_for_specific_words_2, combine_boxes_for_specific_words_3,\
-                        draw_bounding_box, correct_and_visualize
+from OCR_anal import specialDicForOCR , execute_OCR
 
 from text_detection_comparison import TextDetectionAndComparison
 
 from streamlit_cropper import st_cropper
 from PIL import Image
 import numpy as np
-import os
 
 
 # 이미지 삭제 함수
@@ -36,7 +32,8 @@ def main():
         
     # Google Cloud 자격 증명 파일의 경로를 사용하여 클래스 초기화
     # detector = TextDetectionAndComparison("C:\\keys\\feisty-audio-420101-460dfe33e2cb.json")
-    detector = TextDetectionAndComparison("C:\\Users\\user\\Desktop\\myccc-420108-7f52a40950c8.json")
+    # detector = TextDetectionAndComparison("C:\\Users\\user\\Desktop\\myccc-420108-7f52a40950c8.json")
+    myDic = specialDicForOCR()
 
 
     DB_INDEX = "VECTOR_DB_INDEX"
@@ -97,14 +94,16 @@ def main():
         st.session_state.ocr_list = []
     if 'loaded_image' not in st.session_state:
         st.session_state.loaded_image = None
-    if 'anal_image' not in st.session_state:
-        st.session_state.anal_image = False
+    if 'anal_process' not in st.session_state:
+        st.session_state.anal_process = False
     if 'anal_button_click' not in st.session_state:
         st.session_state.anal_button_click = False
     if 'delete_request' not in st.session_state:
         st.session_state.delete_request = False
     if 'vector_db' not in st.session_state:
         st.session_state.vector_db = is_vector_db(DB_INDEX)   
+    if 'anal_image_data' not in st.session_state:
+        st.session_state.anal_image_data = [] 
 
     with st.sidebar:
         with st.expander("Adjust HSV Threshold",expanded=False):
@@ -158,9 +157,9 @@ def main():
                     value=2,  # 기본값
                     step=1  # 단계
             )
-            print('st.expander:',st.session_state.anal_image)
+            print('st.expander:',st.session_state.anal_process)
 
-            process_image = st.button("Analysis Design file....", disabled= not st.session_state.anal_image)
+            process_image = st.button("Analysis Design file....", disabled= not st.session_state.anal_process)
             if process_image:
                st.session_state.anal_button_click = True  #Button Click 을 session 동안 유지 하기위해서 
 
@@ -198,9 +197,10 @@ def main():
             st.session_state.process_list = []
             st.session_state.ocr_images = []
             st.session_state.ocr_list = []
+            st.session_state.anal_image_data = [] 
             del_buttons = []
 
-            st.session_state.anal_image = False
+            st.session_state.anal_process = False
 
         with tab1:
             img = load_to_image(uploaded_Image,pdf_value)
@@ -237,7 +237,7 @@ def main():
  
             st.write("***_:blue[Preview Cropped Image]_***")
             st.image(st.session_state.canvas_image_data)
-            st.session_state.anal_image = True
+            st.session_state.anal_process = True
             # 저장된 이미지 썸네일을 횡으로 나열하여 표시
             if st.session_state.saved_images:
                 # 각 이미지를 작은 썸네일로 변환하여 표시
@@ -294,9 +294,19 @@ def main():
                             if st.session_state[zoom_key]:
                                 st.image(st.session_state.process_images[idx], width=400)
 
+                        if  len(st.session_state.anal_image_data) <= idx: 
+                            st.session_state.anal_image_data.append(None)  # 이미지 처리 결과 대신 None 추가
+                        # 이미지 처리 결과가 이미 있으면 사용, 없으면 새로 처리
+                        if st.session_state.anal_image_data[idx] is None:
+                            # 이미지 처리 함수를 호출하여 결과를 저장
+                            ret_image = execute_OCR(myDic, img_path)
+                            st.session_state.anal_image_data[idx] = ret_image
 
+                        # 결과 이미지를 표시
+                        if st.session_state.anal_image_data[idx] is not None:
+                            st.image(st.session_state.anal_image_data[idx])
 
-                st.write("***_:blue[OCR]_***")
+                # st.write("***_:blue[OCR]_***")
                 # Google Cloud 자격 증명 파일의 경로를 사용하여 클래스 초기화
 
     if not openai_api_key:
