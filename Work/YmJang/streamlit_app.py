@@ -47,7 +47,7 @@ def main():
         #tabs-bui3-tab-0>.st-emotion-cache-l9bjmx p,
         #tabs-bui3-tab-1>.st-emotion-cache-l9bjmx p,
         #tabs-bui3-tab-2>.st-emotion-cache-l9bjmx p{
-            /* 탭 아이템 스타일 변경 */
+        /* 탭 아이템 스타일 변경 */
             font-size:25px
         }
         .element-container iframe{
@@ -56,7 +56,12 @@ def main():
             
         .st-emotion-cache-1kyxreq div{
                 border:3px dashed red
-        } 
+        }
+                
+        .st-emotion-cache-7ym5gk{
+                width:14rem;
+                height:5rem
+        }
         </style>
     """, unsafe_allow_html=True)
     

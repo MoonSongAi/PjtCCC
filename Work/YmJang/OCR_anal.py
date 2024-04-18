@@ -431,7 +431,7 @@ class specialDicForOCR:
             # 공백이 없다고 판단될 경우 결과 리스트에 해당 바운딩 박스 정보를 추가합니다.
             if not isSpace:
                 results.append(bbox)
-                roi_img = self.draw_bounding_box(roi_img, bbox[1], (0, 165, 255), text='띄어쓰기', text_color=(255, 165, 0), font_size=10)
+                roi_img = self.draw_bounding_box(roi_img, bbox[1], (0, 165, 255), text='띄어쓰기', text_color=(255, 165, 0), font_size=30)
 
         
         # 처리가 완료된 후, 바운딩 박스가 그려진 이미지와 검사 결과 리스트를 반환합니다.
