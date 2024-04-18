@@ -282,7 +282,7 @@ class specialDicForOCR:
         x2, y2 = vertices[2]
         cv2.rectangle(image, (x1, y1), (x2, y2), color, 2)  # 바운딩 박스 그리기
         if text:  # 텍스트가 제공된 경우에만 그림
-            image = self.putText(image, text, x1, y1 - 15, color=text_color, font_size=font_size)
+            image = self.putText(image, text, x1, y1 - 25, color=text_color, font_size=font_size)
         return image
 
     def putText(self, image, text, x, y, color=(0, 255, 0), font_size=22):
@@ -329,7 +329,7 @@ class specialDicForOCR:
                         correction_text = f"{message_prefix} {correct}"  # 안내 메시지를 포함한 교정 텍스트
                         # correction_text = f""  # 안내 메시지를 포함한 교정 텍스트
                         # correction_text = f"{message_prefix}Correct: {correct}"  # 안내 메시지를 포함한 교정 텍스트
-                        roi_img = self.draw_bounding_box(roi_img, vertices, box_color, correction_text, text_color, font_size=10)
+                        roi_img = self.draw_bounding_box(roi_img, vertices, box_color, correction_text, text_color, font_size=20)
                         corrected = True
                         break
                 if corrected:
