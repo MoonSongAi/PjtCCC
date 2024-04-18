@@ -6,10 +6,6 @@ from langchain.memory import StreamlitChatMessageHistory
 from langchain_integration import is_vector_db ,load_langchain,  setup_langchain
 from analysis_image import save_image_to_folder ,load_to_image , \
                         get_image_base64,process_image_with_hsv_range 
-from OCR_visualization import plt_imshow, putText, detect_text, load_terms, \
-                        load_special_characters, combine_boxes_for_specific_words_1, \
-                        combine_boxes_for_specific_words_2, combine_boxes_for_specific_words_3,\
-                        draw_bounding_box, correct_and_visualize
 from text_detection_comparison import TextDetectionAndComparison
 from streamlit_cropper import st_cropper
 from OCR_anal import specialDicForOCR , execute_OCR
@@ -33,6 +29,9 @@ def delete_image(image_index):
 def main():
     # Google Cloud 자격 증명 파일의 경로를 사용하여 클래스 초기화
     # detector = TextDetectionAndComparison("C:\\keys\\feisty-audio-420101-460dfe33e2cb.json")
+    
+    # OCR을 위한 사전 준비 작업
+    myDic = specialDicForOCR()
 
     DB_INDEX = "VECTOR_DB_INDEX"
     st.set_page_config(
@@ -92,14 +91,16 @@ def main():
         st.session_state.ocr_list = []
     if 'loaded_image' not in st.session_state:
         st.session_state.loaded_image = None
-    if 'anal_image' not in st.session_state:
-        st.session_state.anal_image = False
+    if 'anal_process' not in st.session_state:
+        st.session_state.anal_process = False
     if 'anal_button_click' not in st.session_state:
         st.session_state.anal_button_click = False
     if 'delete_request' not in st.session_state:
         st.session_state.delete_request = False
     if 'vector_db' not in st.session_state:
-        st.session_state.vector_db = is_vector_db(DB_INDEX)
+        st.session_state.vector_db = is_vector_db(DB_INDEX)   
+    if 'anal_image_data' not in st.session_state:
+        st.session_state.anal_image_data = [] 
 
     with st.sidebar:
         with st.expander("Adjust HSV Threshold",expanded=False):
@@ -153,9 +154,9 @@ def main():
                     value=2,  # 기본값
                     step=1  # 단계
             )
-            print('st.expander:',st.session_state.anal_image)
+            print('st.expander:',st.session_state.anal_process)
 
-            process_image = st.button("Analysis Design file....", disabled= not st.session_state.anal_image)
+            process_image = st.button("Analysis Design file....", disabled= not st.session_state.anal_process)
             if process_image:
                st.session_state.anal_button_click = True  #Button Click 을 session 동안 유지 하기위해서 
 
@@ -193,9 +194,10 @@ def main():
             st.session_state.process_list = []
             st.session_state.ocr_images = []
             st.session_state.ocr_list = []
+            st.session_state.anal_image_data = [] 
             del_buttons = []
 
-            st.session_state.anal_image = False
+            st.session_state.anal_process = False
 
         with tab1:
             img = load_to_image(uploaded_Image,pdf_value)
@@ -231,7 +233,7 @@ def main():
 
             st.write("***_:blue[Preview Cropped Image]_***")
             st.image(st.session_state.canvas_image_data)
-            st.session_state.anal_image = True
+            st.session_state.anal_process = True
             # 저장된 이미지 썸네일을 횡으로 나열하여 표시
             if st.session_state.saved_images:
                 # 각 이미지를 작은 썸네일로 변환하여 표시
@@ -288,124 +290,106 @@ def main():
                             if st.session_state[zoom_key]:
                                 st.image(st.session_state.process_images[idx], width=700)
 
+                        if  len(st.session_state.anal_image_data) <= idx: 
+                            st.session_state.anal_image_data.append(None)  # 이미지 처리 결과 대신 None 추가
+                        # 이미지 처리 결과가 이미 있으면 사용, 없으면 새로 처리
+                        if st.session_state.anal_image_data[idx] is None:
+                            # 이미지 처리 함수를 호출하여 결과를 저장
+                            ret_image = execute_OCR(myDic, img_path)
+                            st.session_state.anal_image_data[idx] = ret_image
 
-                # OCR을 위한 사전 준비 작업
-                myDic = specialDicForOCR()
+                        # 결과 이미지를 표시
+                        if st.session_state.anal_image_data[idx] is not None:
+                            st.image(st.session_state.anal_image_data[idx])
 
-                # processing_list에 있는 각 이미지 파일에 대해 OCR 실행
-                for image_path in st.session_state.process_list:
-                    # OCR 함수 실행
-                    ret_image = execute_OCR(myDic, image_path)
-                    
-                    # 결과 이미지 출력
-                    st.image(ret_image, caption='OCR 결과 이미지')  # Streamlit에서 이미지 출력
+    if not openai_api_key:
+       openai_api_key = st.secrets["OpenAI_Key"]
+       if not openai_api_key:
+          st.info("Please add your OpenAI API key to continue.")
+          st.stop()
 
-                # st.write("***_:blue[OCR]_***")
+    if load_lang:
+        conversation_chain = load_langchain(DB_INDEX,device_option,openai_api_key,model_name)
+        st.session_state.conversation = conversation_chain
+        st.session_state.processComplete = True
 
-                # for idx, image_path in enumerate(st.session_state.images_list):
-                #     text1 = detector.detect_text(image_path)
-                #     text2 = detector.detect_text(st.session_state.process_list[idx])
-                #     result = detector.determine_superior_text(text1, text2)
-                #     print("비교 결과:", result)
+    if process_lang:
+        conversation_chain = setup_langchain(st , tab3, 
+                                            uploaded_files,
+                                            chunk_size,chunk_overlap,device_option,
+                                            openai_api_key,model_name)
+        st.session_state.conversation = conversation_chain
+        st.session_state.processComplete = True
 
-                # st.write('원본 이미지')
-                # st.write(text1)
-                # st.write('-'*50)
-                # st.write('전처리 이미지')
-                # st.write(text2)
-                # st.write('-'*50)
-                # st.write("비교 결과:", result)
+    with tab2:
+        # 버튼에 표시될 내용을 리스트로 정의
+        button_labels = ["글자크기와 장평 가이드라인",
+                         "원산지 표시법",
+                         "굵게 표시해야하는 항목은 무엇이 있나요?",
+                         "영양정보 표시할때 주의사항은?",
+                         "원재료 표시 기준",
+                         "정보표시면 표시방법"]
+            # 2행 3열 구조로 버튼을 배치하기 위한 인덱스
+        if 'last_clicked' not in st.session_state:
+            st.session_state['last_clicked'] = ''
 
+        idx = 0
+        # 두 행을 생성
+        for i in range(2):  # 두 행
+            cols = st.columns(3)
+            for col in cols:  # 각 행에 3개의 열
+                if idx < len(button_labels):
+                    button_key = f"button_{idx}"
+                    if col.button(button_labels[idx], key=button_key):
+                        # 버튼 클릭 시, 해당 버튼의 레이블을 저장
+                        st.session_state['last_clicked'] = button_labels[idx]
+                    idx += 1
 
-##########################################################################################################################chat
-    # if not openai_api_key:
-    #    openai_api_key = st.secrets["OpenAI_Key"]
-    #    if not openai_api_key:
-    #       st.info("Please add your OpenAI API key to continue.")
-    #       st.stop()
+        if 'messages' not in st.session_state:
+            st.session_state['messages'] = [{"role": "assistant", 
+                                            "content": "안녕하세요! 표시디자인과 관련된 궁금하신 것이 있으면 무었이든 질문 하세요!"}]
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
 
-    # if load_lang:
-    #     conversation_chain = load_langchain(DB_INDEX,device_option,openai_api_key,model_name)
-    #     st.session_state.conversation = conversation_chain
-    #     st.session_state.processComplete = True
+        history = StreamlitChatMessageHistory(key="chat_messages")
 
-    # if process_lang:
-    #     conversation_chain = setup_langchain(st , tab3, 
-    #                                         uploaded_files,
-    #                                         chunk_size,chunk_overlap,device_option,
-    #                                         openai_api_key,model_name)
-    #     st.session_state.conversation = conversation_chain
-    #     st.session_state.processComplete = True
+        # Chat logic
+        if st.session_state['last_clicked'] != '':
+            query_text =  st.session_state['last_clicked']
+            st.session_state['last_clicked'] = ''
+            query = query_text
+            st.chat_input(query_text)
+        else:
+            query_text = "질문을 입력해주세요."
+            query = st.chat_input(query_text)
 
-    # with tab2:
-    #     # 버튼에 표시될 내용을 리스트로 정의
-    #     button_labels = ["글자크기와 장평 가이드라인",
-                        #  "원산지 표시법",
-                        #  "굵게 표시해야하는 항목은 무엇이 있나요?",
-                        #  "영양정보 표시할때 주의사항은?",
-                        #  "원재료 표시 기준",
-                        #  "정보표시면 표시방법"]
-    #         # 2행 3열 구조로 버튼을 배치하기 위한 인덱스
-    #     if 'last_clicked' not in st.session_state:
-    #         st.session_state['last_clicked'] = ''
+        if query:
+            st.session_state.messages.append({"role": "user", "content": query})
 
-    #     idx = 0
-    #     # 두 행을 생성
-    #     for i in range(2):  # 두 행
-    #         cols = st.columns(3)
-    #         for col in cols:  # 각 행에 3개의 열
-    #             if idx < len(button_labels):
-    #                 button_key = f"button_{idx}"
-    #                 if col.button(button_labels[idx], key=button_key):
-    #                     # 버튼 클릭 시, 해당 버튼의 레이블을 저장
-    #                     st.session_state['last_clicked'] = button_labels[idx]
-    #                 idx += 1
+            with st.chat_message("user"):
+                st.markdown(query)
 
-    #     if 'messages' not in st.session_state:
-    #         st.session_state['messages'] = [{"role": "assistant", 
-    #                                         "content": "안녕하세요! 표시디자인과 관련된 궁금하신 것이 있으면 무었이든 질문 하세요!"}]
-    #     for message in st.session_state.messages:
-    #         with st.chat_message(message["role"]):
-    #             st.markdown(message["content"])
+            with st.chat_message("assistant"):
+                chain = st.session_state.conversation
+                if chain is None:
+                    st.warning('학습된 정보가 없습니다.')
+                    st.stop()
 
-    #     history = StreamlitChatMessageHistory(key="chat_messages")
+                with st.spinner("Thinking..."):
+                    result = chain({"question": query})
+                    with get_openai_callback() as cb:
+                        st.session_state.chat_history = result['chat_history']
+                    response = result['answer']
+                    st.session_state.messages.append({"role": "assistant", "content": response})
 
-    #     # Chat logic
-    #     if st.session_state['last_clicked'] != '':
-    #         query_text =  st.session_state['last_clicked']
-    #         st.session_state['last_clicked'] = ''
-    #         query = query_text
-    #         st.chat_input(query_text)
-    #     else:
-    #         query_text = "질문을 입력해주세요."
-    #         query = st.chat_input(query_text)
+                    source_documents = result['source_documents']
 
-    #     if query:
-    #         st.session_state.messages.append({"role": "user", "content": query})
-
-    #         with st.chat_message("user"):
-    #             st.markdown(query)
-
-    #         with st.chat_message("assistant"):
-    #             chain = st.session_state.conversation
-    #             if chain is None:
-    #                 st.warning('학습된 정보가 없습니다.')
-    #                 st.stop()
-
-    #             with st.spinner("Thinking..."):
-    #                 result = chain({"question": query})
-    #                 with get_openai_callback() as cb:
-    #                     st.session_state.chat_history = result['chat_history']
-    #                 response = result['answer']
-    #                 st.session_state.messages.append({"role": "assistant", "content": response})
-
-    #                 source_documents = result['source_documents']
-
-    #                 st.markdown(response)
-    #                 with st.expander("참고 문서 확인"):
-    #                     st.markdown(source_documents[0].metadata['source'], help = source_documents[0].page_content)
-    #                     st.markdown(source_documents[1].metadata['source'], help = source_documents[1].page_content)
-    #                     st.markdown(source_documents[2].metadata['source'], help = source_documents[2].page_content)
+                    st.markdown(response)
+                    with st.expander("참고 문서 확인"):
+                        st.markdown(source_documents[0].metadata['source'], help = source_documents[0].page_content)
+                        st.markdown(source_documents[1].metadata['source'], help = source_documents[1].page_content)
+                        st.markdown(source_documents[2].metadata['source'], help = source_documents[2].page_content)
 
 
 if __name__ == '__main__':
