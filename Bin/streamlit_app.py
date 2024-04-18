@@ -262,8 +262,11 @@ def main():
                     if zoom_key not in st.session_state:
                         st.session_state[zoom_key] = False
 
-                # 선택된 이미지 이름으로 실제 이미지 객체를 얻음
-                cols = st.columns(len(st.session_state.images_list))
+                # 이미지 리스트가 존재하며, 길이가 0보다 클 때만 columns를 생성
+                if 'images_list' in st.session_state and len(st.session_state.images_list) > 0:
+                    cols = st.columns(len(st.session_state.images_list))
+                else:
+                    st.warning("이미지 목록이 비어 있거나 존재하지 않습니다. 적절한 처리가 필요합니다.")
                 for idx, img_path in enumerate(st.session_state.images_list):
                     # print(len(st.session_state.process_list)-1,idx)
                     if len(st.session_state.process_list)-1 < idx:  #새로운 이미지가 추가된 경우만
