@@ -490,9 +490,9 @@ def filter_bboxes_with_units(results, units):
 
 
 def main():
-    result = detect_text('C:\\Users\\bluecom010\\Desktop\\test_final_2.png')
+    texts = detect_text('C:\\Users\\bluecom010\\Desktop\\test_final_2.png')
     units = ['mg', '%']
-    bboxes=filter_bboxes_with_units(result, units)
+    bboxes=filter_bboxes_with_units(texts, units)
 
     # 이미지를 불러옵니다.
     img_path = 'C:\\Users\\bluecom010\\Desktop\\test_final_2.png'
@@ -511,7 +511,7 @@ def main():
     correction_dict_3 = load_terms('C:\\Users\\bluecom010\\Desktop\\지의\\24_03_22_최종프로젝트\\맞춤법\\맞춤법용어집_볼드체.csv')
     special_chars_2 = load_special_characters('C:\\Users\\bluecom010\\Desktop\\지의\\24_03_22_최종프로젝트\\맞춤법\\맞춤법용어집_붙여쓰기_특정문자.csv')
 
-    texts_rev1 = combine_boxes_for_specific_words_2(result, special_chars_2) ##special_chars에 ['(',')'] 넣으면 괄호 앞단어 뒷단어가 좌표5이상 띄어져 있을 때 함꼐 bbox쳐짐
+    texts_rev1 = combine_boxes_for_specific_words_2(texts, special_chars_2) ##special_chars에 ['(',')'] 넣으면 괄호 앞단어 뒷단어가 좌표5이상 띄어져 있을 때 함꼐 bbox쳐짐
     texts_rev2 = combine_boxes_for_specific_words_1(texts_rev1, ["유통", "기한"]) ##합쳐서 bbox치고 싶은 단어를 list로 받아서 bbox쳐지도록 함수화 시킴 ex)'유통' 다음 다음이 '기한'일 경우 함꼐 bbox쳐짐 
     combined_texts = combine_boxes_for_specific_words_1(texts_rev2, ["프랑스", "산"])
 
