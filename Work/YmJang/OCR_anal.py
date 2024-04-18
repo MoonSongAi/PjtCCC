@@ -239,7 +239,7 @@ class specialDicForOCR:
 
         return combined_texts
     
-    def draw_bounding_box(self,image, vertices, color, text='', text_color=(255, 255, 255), font_size=22):
+    def draw_bounding_box(self,image, vertices, color, text='', text_color=(255, 255, 255), font_size=30):
         """주어진 이미지에 바운딩 박스와 텍스트를 그립니다."""
         x1, y1 = vertices[0]
         x2, y2 = vertices[2]
@@ -248,7 +248,7 @@ class specialDicForOCR:
             image = self.putText(image, text, x1, y1 - 15, color=text_color, font_size=font_size)
         return image
 
-    def putText(self, image, text, x, y, color=(0, 255, 0), font_size=22):
+    def putText(self, image, text, x, y, color=(0, 255, 0), font_size=30):
         if type(image) == np.ndarray:
             color_coverted = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             image = Image.fromarray(color_coverted)

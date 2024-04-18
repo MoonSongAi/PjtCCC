@@ -7,23 +7,22 @@ from langchain.memory import StreamlitChatMessageHistory
 from langchain_integration import is_vector_db ,load_langchain,  setup_langchain
 from analysis_image import save_image_to_folder ,load_to_image , \
                         get_image_base64,process_image_with_hsv_range 
+from OCR_anal import specialDicForOCR , execute_OCR
 
-from OCR_visualization import plt_imshow, putText, detect_text, load_terms, \
-                        load_special_characters, combine_boxes_for_specific_words_1, \
-                        combine_boxes_for_specific_words_2, combine_boxes_for_specific_words_3,\
-                        draw_bounding_box, correct_and_visualize
 from text_detection_comparison import TextDetectionAndComparison
 
 from streamlit_cropper import st_cropper
 from PIL import Image
 import numpy as np
-
+import os
 
 # 이미지 삭제 함수
 def delete_image(image_index):
     if 0 <= image_index < len(st.session_state.saved_images):
         del st.session_state.saved_images[image_index]
         del st.session_state.images_list[image_index]
+        del st.session_state.process_images[image_index]
+        del st.session_state.process_list[image_index]
         # 이미지 리스트 변경 후 다시 이미지와 버튼 표시를 위해 페이지 갱신
         if len(st.session_state.images_list) == 0:
             st.session_state.anal_button_click = False
@@ -33,7 +32,8 @@ def main():
         
     # Google Cloud 자격 증명 파일의 경로를 사용하여 클래스 초기화
     # detector = TextDetectionAndComparison("C:\\keys\\feisty-audio-420101-460dfe33e2cb.json")
-    detector = TextDetectionAndComparison("C:\\Users\\user\\Desktop\\myccc-420108-7f52a40950c8.json")
+    # detector = TextDetectionAndComparison("C:\\Users\\user\\Desktop\\myccc-420108-7f52a40950c8.json")
+    myDic = specialDicForOCR()
 
 
     DB_INDEX = "VECTOR_DB_INDEX"
@@ -84,21 +84,26 @@ def main():
         st.session_state.saved_images = []
     if 'process_images' not in st.session_state:
         st.session_state.process_images = []
+    if 'ocr_images' not in st.session_state:
+        st.session_state.ocr_images = []
     if 'images_list' not in st.session_state:
         st.session_state.images_list = []
     if 'process_list' not in st.session_state:
-            st.session_state.process_list = []
+        st.session_state.process_list = []
+    if 'ocr_list' not in st.session_state:
+        st.session_state.ocr_list = []
     if 'loaded_image' not in st.session_state:
         st.session_state.loaded_image = None
-    if 'anal_image' not in st.session_state:
-        st.session_state.anal_image = False
+    if 'anal_process' not in st.session_state:
+        st.session_state.anal_process = False
     if 'anal_button_click' not in st.session_state:
         st.session_state.anal_button_click = False
     if 'delete_request' not in st.session_state:
         st.session_state.delete_request = False
     if 'vector_db' not in st.session_state:
-        st.session_state.vector_db = is_vector_db(DB_INDEX)
-    
+        st.session_state.vector_db = is_vector_db(DB_INDEX)   
+    if 'anal_image_data' not in st.session_state:
+        st.session_state.anal_image_data = [] 
 
     with st.sidebar:
         with st.expander("Adjust HSV Threshold",expanded=False):
@@ -107,8 +112,11 @@ def main():
             default_index = colors.index(default_color)  # 'Black'의 인덱스 찾기
             color_selection = st.selectbox("Select line color", colors, index=default_index)
             if color_selection == "Red":
-                lower = [0, 100, 100] 
-                upper = [10, 255, 255]
+                # 클릭한 HSV 색상:  [174 250 209]
+                lower =  [164,210,159]
+                upper =  [179,255,255]
+                # lower = [0, 100, 100] 
+                # upper = [10, 255, 255]
             elif color_selection == "Green":
                 lower = [40,40,40]
                 upper = [80,255,255]
@@ -120,10 +128,10 @@ def main():
                 upper = [80,255,255]
             elif color_selection == "Black":
                 #클릭한 HSV 색상:  [ 89 255  84]
-                # lower = [79, 215, 34]
-                # upper = [99, 255, 134]
-                lower = [0, 0, 0]
-                upper = [180, 255, 50]
+                lower = [79, 215, 34]
+                upper = [99, 255, 134]
+                # lower = [0, 0, 0]
+                # upper = [180, 255, 50]
             else:
                 lower = [0,100,100]
                 upper = [10,255,255]
@@ -149,9 +157,9 @@ def main():
                     value=2,  # 기본값
                     step=1  # 단계
             )
-            print('st.expander:',st.session_state.anal_image)
+            print('st.expander:',st.session_state.anal_process)
 
-            process_image = st.button("Analysis Design file....", disabled= not st.session_state.anal_image)
+            process_image = st.button("Analysis Design file....", disabled= not st.session_state.anal_process)
             if process_image:
                st.session_state.anal_button_click = True  #Button Click 을 session 동안 유지 하기위해서 
 
@@ -187,9 +195,12 @@ def main():
             st.session_state.images_list = []
             st.session_state.process_images = []
             st.session_state.process_list = []
+            st.session_state.ocr_images = []
+            st.session_state.ocr_list = []
+            st.session_state.anal_image_data = [] 
             del_buttons = []
 
-            st.session_state.anal_image = False
+            st.session_state.anal_process = False
 
         with tab1:
             img = load_to_image(uploaded_Image,pdf_value)
@@ -203,11 +214,20 @@ def main():
             # 버튼 배치를 위한 컬럼 생성
             col1, col2  = st.columns(2)
             with col1:
-                # 이미지 저장 버튼
-                save_image = st.button("Save cropped image")
-            with col2:
                 # 이미지 회전 버튼
                 rotate_image = st.button("Rotate cropped image")
+            with col2:
+                # 이미지 저장 버튼
+                save_image = st.button("Save cropped image")
+            if rotate_image:
+                st.session_state.rotation_angle -= 90   # 회전 각도 업데이트
+                st.session_state.rotation_angle %= 360  # 360도가 되면 0으로 리셋
+                # 현재 회전 각도에 따라 이미지 회전
+            st.session_state.canvas_image_data = st.session_state.canvas_image_data.rotate(
+                                                              st.session_state.rotation_angle,
+                                                              expand = True)
+            print(f"st.session_state.rotation_angle={st.session_state.rotation_angle}")
+
             if save_image:
                 save_name = save_image_to_folder(st.session_state.canvas_image_data)
                 # 저장된 이미지 리스트에 이미지 추가
@@ -215,18 +235,9 @@ def main():
                 st.session_state.images_list.append(save_name)
 
  
-            if rotate_image:
-                st.session_state.rotation_angle += 90   # 회전 각도 업데이트
-                st.session_state.rotation_angle %= 360  # 360도가 되면 0으로 리셋
-                # 현재 회전 각도에 따라 이미지 회전
-            st.session_state.canvas_image_data = st.session_state.canvas_image_data.rotate(
-                                                              st.session_state.rotation_angle,
-                                                              expand = True)
-            # print(f"st.session_state.rotation_angle={st.session_state.rotation_angle}")
-
             st.write("***_:blue[Preview Cropped Image]_***")
             st.image(st.session_state.canvas_image_data)
-            st.session_state.anal_image = True
+            st.session_state.anal_process = True
             # 저장된 이미지 썸네일을 횡으로 나열하여 표시
             if st.session_state.saved_images:
                 # 각 이미지를 작은 썸네일로 변환하여 표시
@@ -234,9 +245,10 @@ def main():
                 for idx, saved_image in enumerate(st.session_state.saved_images):
                     with cols[idx]:
                         # 썸네일 크기로 이미지 리사이즈
+                        thumbnail_images = st.session_state.saved_images[idx].copy()
                         st.caption(st.session_state.images_list[idx])
-                        saved_image.thumbnail((200, 200))
-                        st.image(saved_image, width=100)  # 썸네일 이미지 표시
+                        thumbnail_images.thumbnail((200, 200))
+                        st.image(thumbnail_images, width=100)  # 썸네일 이미지 표시
                         # 삭제 버튼 생성
                         if st.button(f'Delete {idx}', key=f"delete_{idx}"):
                             st.session_state.delete_request = True
@@ -257,11 +269,11 @@ def main():
                     if len(st.session_state.process_list)-1 < idx:  #새로운 이미지가 추가된 경우만
                         image = Image.open(img_path).convert('RGB')
                         processed_image = process_image_with_hsv_range(image, lower_hsv, upper_hsv)
-
+                    
+                        # 저장된 이미지 리스트에 이미지 추가
                         st.session_state.process_images.append(processed_image)
                         save_name = save_image_to_folder(processed_image)
                         st.session_state.process_list.append(save_name)
-
 
                 if len(st.session_state.process_list) > 0:
                     # print(st.session_state.process_list)
@@ -282,7 +294,19 @@ def main():
                             if st.session_state[zoom_key]:
                                 st.image(st.session_state.process_images[idx], width=400)
 
-                st.write("***_:blue[OCR]_***")
+                        if  len(st.session_state.anal_image_data) <= idx: 
+                            st.session_state.anal_image_data.append(None)  # 이미지 처리 결과 대신 None 추가
+                        # 이미지 처리 결과가 이미 있으면 사용, 없으면 새로 처리
+                        if st.session_state.anal_image_data[idx] is None:
+                            # 이미지 처리 함수를 호출하여 결과를 저장
+                            ret_image = execute_OCR(myDic, img_path)
+                            st.session_state.anal_image_data[idx] = ret_image
+
+                        # 결과 이미지를 표시
+                        if st.session_state.anal_image_data[idx] is not None:
+                            st.image(st.session_state.anal_image_data[idx])
+
+                # st.write("***_:blue[OCR]_***")
                 # Google Cloud 자격 증명 파일의 경로를 사용하여 클래스 초기화
 
     if not openai_api_key:
