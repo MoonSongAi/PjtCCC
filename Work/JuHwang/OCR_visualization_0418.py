@@ -323,6 +323,43 @@ def combine_boxes_for_specific_words_3(texts, special_chars):
 
     return combined_texts
 
+def combine_boxes_for_specific_words_JG(texts, sequences):
+    combined_texts = []
+    i = 0
+    while i < len(texts):
+        matched = False
+        for sequence in sequences:
+            if i + len(sequence) <= len(texts) and all(texts[i + j]['description'] == sequence[j] for j in range(len(sequence))):
+                combined_description = ''.join(texts[i + j]['description'] for j in range(len(sequence)))
+                vertices = [
+                    {'x': min(texts[i + j]['bounding_poly']['vertices'][0]['x'] for j in range(len(sequence))),
+                     'y': min(texts[i + j]['bounding_poly']['vertices'][0]['y'] for j in range(len(sequence)))},
+                    {'x': max(texts[i + j]['bounding_poly']['vertices'][2]['x'] for j in range(len(sequence))),
+                     'y': max(texts[i + j]['bounding_poly']['vertices'][2]['y'] for j in range(len(sequence)))}
+                ]
+                combined_texts.append({
+                    "description": combined_description,
+                    "bounding_poly": {"vertices": [
+                        {'x': vertices[0]['x'], 'y': vertices[0]['y']},
+                        {'x': vertices[1]['x'], 'y': vertices[0]['y']},
+                        {'x': vertices[1]['x'], 'y': vertices[1]['y']},
+                        {'x': vertices[0]['x'], 'y': vertices[1]['y']}
+                    ]}
+                })
+                i += len(sequence) - 1
+                matched = True
+                break
+        if not matched:
+            combined_texts.append({
+                "description": texts[i]['description'],
+                "bounding_poly": {
+                    "vertices": [{'x': vertex['x'], 'y': vertex['y']} for vertex in texts[i]['bounding_poly']['vertices']]
+                }
+            })
+        i += 1
+
+    return combined_texts
+
 def draw_bounding_box(image, vertices, color, text='', text_color=(255, 255, 255), font_size=22):
     """주어진 이미지에 바운딩 박스와 텍스트를 그립니다."""
     x1, y1 = vertices[0]
@@ -489,34 +526,46 @@ def filter_bboxes_with_units(results, units):
     return bboxes
 
 
-def main():
-    texts = detect_text('C:\\Users\\bluecom010\\Desktop\\test_final_2.png')
-    units = ['mg', '%']
-    bboxes=filter_bboxes_with_units(texts, units)
+result = detect_text('./OCR_test/picture/test_final_2.png')
+units = ['mg', '%']
+bboxes=filter_bboxes_with_units(result, units)
 
-    # 이미지를 불러옵니다.
-    img_path = 'C:\\Users\\bluecom010\\Desktop\\test_final_2.png'
-    img = cv2.imread(img_path)
-    roi_img = img.copy()
+# 이미지를 불러옵니다.
+img_path = './OCR_test/picture/test_final_2.png'
+img = cv2.imread(img_path)
+roi_img = img.copy()
 
-    # 첫 번째 함수를 사용하여 이미지에 첫 번째 세트의 바운딩 박스와 텍스트를 적용합니다.
-    results, roi_img = checkSpace(img_path, bboxes)
-    print("\n***** 검사결과 *****")
-    print(results)
+# 첫 번째 함수를 사용하여 이미지에 첫 번째 세트의 바운딩 박스와 텍스트를 적용합니다.
+results, roi_img = checkSpace(img_path, bboxes)
+print("\n***** 검사결과 *****")
+print(results)
 
-    # 두 번째 함수를 사용하여 이미지에 두 번째 세트의 바운딩 박스와 텍스트를 적용합니다.
-    correction_dict_1 = load_terms('C:\\Users\\bluecom010\\Desktop\\지의\\24_03_22_최종프로젝트\\맞춤법\\맞춤법용어집_주의어.csv')
-    correction_dict_2 = load_terms('C:\\Users\\bluecom010\\Desktop\\지의\\24_03_22_최종프로젝트\\맞춤법\\맞춤법용어집_붙여쓰기.csv')
-    # correction_dict_3 = load_terms('C:\\Users\\bluecom010\\Desktop\\지의\\24_03_22_최종프로젝트\\맞춤법\\맞춤법용어집_띄어쓰기.csv') # 0g, 1g,...
-    correction_dict_3 = load_terms('C:\\Users\\bluecom010\\Desktop\\지의\\24_03_22_최종프로젝트\\맞춤법\\맞춤법용어집_볼드체.csv')
-    special_chars_2 = load_special_characters('C:\\Users\\bluecom010\\Desktop\\지의\\24_03_22_최종프로젝트\\맞춤법\\맞춤법용어집_붙여쓰기_특정문자.csv')
+# 두 번째 함수를 사용하여 이미지에 두 번째 세트의 바운딩 박스와 텍스트를 적용합니다.
+correction_dict_1 = load_terms('C:\\Users\\bluecom010\\Desktop\\지의\\24_03_22_최종프로젝트\\맞춤법\\맞춤법용어집_주의어.csv')
+correction_dict_2 = load_terms('C:\\Users\\bluecom010\\Desktop\\지의\\24_03_22_최종프로젝트\\맞춤법\\맞춤법용어집_붙여쓰기.csv')
+# correction_dict_3 = load_terms('C:\\Users\\bluecom010\\Desktop\\지의\\24_03_22_최종프로젝트\\맞춤법\\맞춤법용어집_띄어쓰기.csv') # 0g, 1g,...
+correction_dict_3 = load_terms('C:\\Users\\bluecom010\\Desktop\\지의\\24_03_22_최종프로젝트\\맞춤법\\맞춤법용어집_볼드체.csv')
+special_chars_2 = load_special_characters('C:\\Users\\bluecom010\\Desktop\\지의\\24_03_22_최종프로젝트\\맞춤법\\맞춤법용어집_붙여쓰기_특정문자.csv')
 
-    texts_rev1 = combine_boxes_for_specific_words_2(texts, special_chars_2) ##special_chars에 ['(',')'] 넣으면 괄호 앞단어 뒷단어가 좌표5이상 띄어져 있을 때 함꼐 bbox쳐짐
-    texts_rev2 = combine_boxes_for_specific_words_1(texts_rev1, ["유통", "기한"]) ##합쳐서 bbox치고 싶은 단어를 list로 받아서 bbox쳐지도록 함수화 시킴 ex)'유통' 다음 다음이 '기한'일 경우 함꼐 bbox쳐짐 
-    combined_texts = combine_boxes_for_specific_words_1(texts_rev2, ["프랑스", "산"])
+texts_rev1 = combine_boxes_for_specific_words_2(result, special_chars_2) ##special_chars에 ['(',')'] 넣으면 괄호 앞단어 뒷단어가 좌표5이상 띄어져 있을 때 함꼐 bbox쳐짐
+texts_rev2 = combine_boxes_for_specific_words_1(texts_rev1, ["유통", "기한"]) ##합쳐서 bbox치고 싶은 단어를 list로 받아서 bbox쳐지도록 함수화 시킴 ex)'유통' 다음 다음이 '기한'일 경우 함꼐 bbox쳐짐 
+# combined_texts = combine_boxes_for_specific_words_1(texts_rev2, ["베타", "카로틴"])
 
-    roi_img=correct_and_visualize(roi_img, combined_texts, correction_dict_1, correction_dict_2, correction_dict_3)
-    plt_imshow(["Original", "ROI"], [img, roi_img], figsize=(16, 10))
+sequences = [["프랑스", "산"],["칼슘","과"],["비타민","K"],["비타민","D"],["비타민","K"],["구연","산삼","나트륨"],["해조","칼슘"],["산화","마그네슘"],
+                 ["산화","아연"],["중성","지방"],["셀룰로스","칼슘"],["칼슘","혼합"],["탄산","칼슘"],["스테아린산","마그네슘"],["(","비타민K"],
+                 ["건강","기능","식품","유통","전문","판매원"],["건강","기능","식품","전문","제조원"],["발효","마그네슘"],["산호","칼슘"],["유통","전문","판매원"],
+                 ["안심","칼슘"],["마그네슘","디"],["열","량"],["카제인","나트륨"],["인산","나트륨"],["칼슘","흡수율"],["*","칼슘"],[",","비타민"],["마그네슘",","],["칼슘","&","마그네슘","&","비타민"],
+                 ["이상적인","칼슘",":","마그네슘"],["마그네슘,","비타민"],["(","칼슘"],["[","칼슘"],["[","마그네슘"],["[","비타민"],["마리","골드","꽃","추출물"],
+                 ["[비타민","A"],["[비타민","B2","]"],["[비타민","Be","]","단백질"],["[비타민","B12","]"],["[비타민","E","]"],["베타","카로틴"],[",","베타"],
+                 ["]","마리"],[",","마리"],["산","망간"],["카로틴","혼합"],["(","베타"],[",","엽산"],["단백질","및"],["엽산","대사"],["스위스","산"],[",비타민","A"],[",비타민","B"],
+                 [",비타민","B123g"],[",비타민","E"],["루테인","맥스"],["Max","마리"],["(","루테인"],["건","강","기능","식품","전문","제조원"],
+                 ["건강","기능","식품","유통","전","문","판매원"],["황산","망간"],["[비타민","A",",베타","카로틴"],[",비타민","A"],[",비타민","B2"],
+                 [",비타민","E"],[",비타민","B123g"],["(","비타민"],["구리","쳐"],["건강","기능","식품","우동","전도","판매"],["건강","기능","식품","전문","제조","인"],
+                 ["D","를"],["줌","[마그네슘"],["필요","[비타민"],["정보","[칼슘"],["D","제품"]]
+                
+combined_texts = combine_boxes_for_specific_words_JG(texts_rev2, sequences)
 
-if __name__ == "__main__":
-    main()
+print(combined_texts)
+
+roi_img=correct_and_visualize(roi_img, combined_texts, correction_dict_1, correction_dict_2, correction_dict_3)
+plt_imshow(["Original", "ROI"], [img, roi_img], figsize=(16, 10))
