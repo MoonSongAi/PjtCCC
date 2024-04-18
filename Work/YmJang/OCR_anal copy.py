@@ -43,23 +43,23 @@ class specialDicForOCR:
         return characters
 
     def init_load_font(self,size=20):
-        font_path = r'C:\PjtCCC\Work\YmJang\SUITE-ttf\SUITE-Light.ttf'   # 사용할 폰트 파일의 경로
+        font_path = 'C:/PjtCCC/Bin/SUIT-ttf/SUIT-Light.ttf'   # 사용할 폰트 파일의 경로
         font_size = size  # 폰트 크기 설정
         self.font = ImageFont.truetype(font_path, font_size)
 
 
     def load_special_dic(self):
         # 예제 사용법 (이 부분은 실제 코드에 맞게 조정 필요)
-        self.correction_dict_1 = self.load_terms(r'C:\PjtCCC\Work\YmJang\SpecialDic\맞춤법용어집_주의어.csv')
-        self.correction_dict_2 = self.load_terms(r'C:\PjtCCC\Work\YmJang\SpecialDic\맞춤법용어집_붙여쓰기.csv')
-        # self.correction_dict_3 = self.load_terms('./SpecialDic/맞춤법용어집_띄어쓰기_보류.csv')
-        self.correction_dict_3 = self.load_terms(r'C:\PjtCCC\Work\YmJang\SpecialDic\맞춤법용어집_볼드체.csv')
-        self.special_chars_2 = self.load_special_characters(r'C:\PjtCCC\Work\YmJang\SpecialDic\맞춤법용어집_붙여쓰기_특정문자.csv')
-        # self.special_chars_3 = self.load_special_characters('./SpecialDic/맞춤법용어집_띄어쓰기_특정문자.csv')
+        self.correction_dict_1 = self.load_terms('C:/PjtCCC/Bin/SpecialDic/맞춤법용어집_주의어.csv')
+        self.correction_dict_2 = self.load_terms('C:/PjtCCC/Bin/SpecialDic/맞춤법용어집_붙여쓰기.csv')
+        # self.correction_dict_3 = self.load_terms('C:/PjtCCC/Bin/SpecialDic/맞춤법용어집_띄어쓰기_보류.csv')
+        self.correction_dict_3 = self.load_terms('C:/PjtCCC/Bin/SpecialDic/맞춤법용어집_볼드체.csv')
+        self.special_chars_2 = self.load_special_characters('C:/PjtCCC/Bin/SpecialDic/맞춤법용어집_붙여쓰기_특정문자.csv')
+        # self.special_chars_3 = self.load_special_characters('C:/PjtCCC/Bin/SpecialDic/맞춤법용어집_띄어쓰기_특정문자.csv')
 
     def init_google_vision(self):
         """이미지 파일에서 텍스트를 감지합니다."""
-        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r"C:\keys\feisty-audio-420101-460dfe33e2cb.json" #json으로 발급받은 API키 입력 
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'C:\\Users\\user\\Desktop\\myccc-420108-7f52a40950c8.json' #json으로 발급받은 API키 입력 
         client_options = {'api_endpoint': 'eu-vision.googleapis.com'} #Google Cloud Vision API의 엔드포인트를 설정
         self.client = vision.ImageAnnotatorClient(client_options=client_options)#Google Cloud Vision API의 ImageAnnotatorClient 인스턴스를 생성합니다. 
 
@@ -201,7 +201,6 @@ class specialDicForOCR:
                 i += 1
 
         return combined_texts
-    
     ###################### add by hwang
     def combine_boxes_for_specific_words_JG(self, texts, sequences):
         combined_texts = []
@@ -277,8 +276,7 @@ class specialDicForOCR:
 
         return combined_texts
     
-    
-    def draw_bounding_box(self,image, vertices, color, text='', text_color=(255, 255, 255), font_size=40):
+    def draw_bounding_box(self,image, vertices, color, text='', text_color=(255, 255, 255), font_size=22):
         """주어진 이미지에 바운딩 박스와 텍스트를 그립니다."""
         x1, y1 = vertices[0]
         x2, y2 = vertices[2]
@@ -287,7 +285,7 @@ class specialDicForOCR:
             image = self.putText(image, text, x1, y1 - 15, color=text_color, font_size=font_size)
         return image
 
-    def putText(self, image, text, x, y, color=(0, 255, 0), font_size=40):
+    def putText(self, image, text, x, y, color=(0, 255, 0), font_size=22):
         if type(image) == np.ndarray:
             color_coverted = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             image = Image.fromarray(color_coverted)
@@ -532,12 +530,10 @@ def execute_OCR(myDic , image_path):
                  [",비타민","E"],[",비타민","B123g"],["(","비타민"],["구리","쳐"],["건강","기능","식품","우동","전도","판매"],["건강","기능","식품","전문","제조","인"],
                  ["D","를"],["줌","[마그네슘"],["필요","[비타민"],["정보","[칼슘"],["D","제품"]]
 
-
-
     texts_rev1 = myDic.combine_boxes_for_specific_words_2(texts) ##special_chars에 ['(',')'] 넣으면 괄호 앞단어 뒷단어가 좌표5이상 띄어져 있을 때 함꼐 bbox쳐짐
-    texts_rev2 = myDic.combine_boxes_for_specific_words_1(texts_rev1, ["유통", "기한"]) ##합쳐서 bbox치고 싶은 단어를 list로 받아서 bbox쳐지도록 함수화 시킴 ex)'유통' 다음 다음이 '기한'일 경우 함꼐 bbox쳐짐 
+    # texts_rev2 = myDic.combine_boxes_for_specific_words_1(texts_rev1, ["유통", "기한"]) ##합쳐서 bbox치고 싶은 단어를 list로 받아서 bbox쳐지도록 함수화 시킴 ex)'유통' 다음 다음이 '기한'일 경우 함꼐 bbox쳐짐 
+    combined_texts = myDic.combine_boxes_for_specific_words_JG(texts_rev1, sequences)
     # combined_texts = myDic.combine_boxes_for_specific_words_1(texts_rev2, ["프랑스", "산"])
-    combined_texts = myDic.combine_boxes_for_specific_words_JG(texts_rev2, sequences)
     roi_img = myDic.correct_and_visualize(roi_img, combined_texts)
 
     border_color = (102, 102, 102)  # Black color in BGR

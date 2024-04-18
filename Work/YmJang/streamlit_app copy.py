@@ -14,7 +14,7 @@ from text_detection_comparison import TextDetectionAndComparison
 from streamlit_cropper import st_cropper
 from PIL import Image
 import numpy as np
-import os
+
 
 # 이미지 삭제 함수
 def delete_image(image_index):
