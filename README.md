@@ -1,5 +1,6 @@
 <h1 align="center">Hi 👋, We are ClearCutChecker developement team</h1>
 <h3 align="center">By quickly reviewing whether the display design image of a product requested from an ODM company complies with regulations, we create a support tool that supports a quick decision-making process in the next manufacturing process and compliance with the production delivery date of packaging materials.</h3>
+<h3 align="center">ODM 회사의 디자인팀은 고객으로 부터 의뢰 받은 제품의 포장(표시) 디자인 이미지가 광고 규정을 준수하는지 신속하게 검토함으로써,포장재 제작의뢰를 신속하게 하여 생산납기 준수를 지원하는 디자인 검토 자동화 도구를 만듭니다..</h3>
 
 <p align="left"> <img src="https://komarev.com/ghpvc/?username=moonsongai&label=Profile%20views&color=0e75b6&style=flat" alt="moonsongai" /> </p>
 
