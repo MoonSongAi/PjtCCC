@@ -39,7 +39,7 @@ def main():
         page_icon=":volcano:")
 
 
-    st.title("_표시 디자인 오류 탐색기..._ :red[QA Chat]_ :volcano:")
+    st.title("_표시 디자인 오류 탐색기_ :red[QA Chat]:volcano:")
     # 여기에 CSS 스타일을 추가
     st.markdown("""
         <style>
@@ -66,7 +66,7 @@ def main():
     """, unsafe_allow_html=True)
     
 
-    tab1 , tab2 ,tab3 = st.tabs(["💫Image processing....","🧑‍🚀chat about Design....","🕵️‍♂️ chucked Data"])
+    tab1 , tab2 ,tab3 = st.tabs(["💫Image processing","🧑‍🚀chat about Design","🕵️‍♂️ chuncked Data"])
 
     if "conversation" not in st.session_state:
         st.session_state.conversation = None
@@ -352,7 +352,7 @@ def main():
 
         if 'messages' not in st.session_state:
             st.session_state['messages'] = [{"role": "assistant", 
-                                            "content": "안녕하세요! 표시디자인과 관련된 궁금하신 것이 있으면 무었이든 질문 하세요!"}]
+                                            "content": "안녕하세요! 표시디자인과 관련된 궁금하신 것이 있으면 무엇이든 질문 하세요!"}]
         for message in st.session_state.messages:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])

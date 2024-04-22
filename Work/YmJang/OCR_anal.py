@@ -43,19 +43,19 @@ class specialDicForOCR:
         return characters
 
     def init_load_font(self,size=20):
-        font_path = r'C:\PjtCCC\Work\YmJang\SUITE-ttf\SUITE-Light.ttf'   # 사용할 폰트 파일의 경로
+        font_path = 'C:/PjtCCC/Bin/SUIT-ttf/SUIT-Light.ttf'   # 사용할 폰트 파일의 경로
         font_size = size  # 폰트 크기 설정
         self.font = ImageFont.truetype(font_path, font_size)
 
 
     def load_special_dic(self):
         # 예제 사용법 (이 부분은 실제 코드에 맞게 조정 필요)
-        self.correction_dict_1 = self.load_terms(r'C:\PjtCCC\Work\YmJang\SpecialDic\맞춤법용어집_주의어.csv')
-        self.correction_dict_2 = self.load_terms(r'C:\PjtCCC\Work\YmJang\SpecialDic\맞춤법용어집_붙여쓰기.csv')
-        # self.correction_dict_3 = self.load_terms('./SpecialDic/맞춤법용어집_띄어쓰기_보류.csv')
-        self.correction_dict_3 = self.load_terms(r'C:\PjtCCC\Work\YmJang\SpecialDic\맞춤법용어집_볼드체.csv')
-        self.special_chars_2 = self.load_special_characters(r'C:\PjtCCC\Work\YmJang\SpecialDic\맞춤법용어집_붙여쓰기_특정문자.csv')
-        # self.special_chars_3 = self.load_special_characters('./SpecialDic/맞춤법용어집_띄어쓰기_특정문자.csv')
+        self.correction_dict_1 = self.load_terms('C:/PjtCCC/Bin/SpecialDic/맞춤법용어집_주의어.csv')
+        self.correction_dict_2 = self.load_terms('C:/PjtCCC/Bin/SpecialDic/맞춤법용어집_붙여쓰기.csv')
+        # self.correction_dict_3 = self.load_terms('C:/PjtCCC/Bin/SpecialDic/맞춤법용어집_띄어쓰기_보류.csv')
+        self.correction_dict_3 = self.load_terms('C:/PjtCCC/Bin/SpecialDic/맞춤법용어집_볼드체.csv')
+        self.special_chars_2 = self.load_special_characters('C:/PjtCCC/Bin/SpecialDic/맞춤법용어집_붙여쓰기_특정문자.csv')
+        # self.special_chars_3 = self.load_special_characters('C:/PjtCCC/Bin/SpecialDic/맞춤법용어집_띄어쓰기_특정문자.csv')
 
     def init_google_vision(self):
         """이미지 파일에서 텍스트를 감지합니다."""
@@ -201,7 +201,6 @@ class specialDicForOCR:
                 i += 1
 
         return combined_texts
-    
     ###################### add by hwang
     def combine_boxes_for_specific_words_JG(self, texts, sequences):
         combined_texts = []
@@ -277,17 +276,16 @@ class specialDicForOCR:
 
         return combined_texts
     
-    
-    def draw_bounding_box(self,image, vertices, color, text='', text_color=(255, 255, 255), font_size=40):
+    def draw_bounding_box(self,image, vertices, color, text='', text_color=(255, 255, 255), font_size=13):
         """주어진 이미지에 바운딩 박스와 텍스트를 그립니다."""
         x1, y1 = vertices[0]
         x2, y2 = vertices[2]
         cv2.rectangle(image, (x1, y1), (x2, y2), color, 2)  # 바운딩 박스 그리기
         if text:  # 텍스트가 제공된 경우에만 그림
-            image = self.putText(image, text, x1, y1 - 15, color=text_color, font_size=font_size)
+            image = self.putText(image, text, x1, y1 - 25, color=text_color, font_size=font_size)
         return image
 
-    def putText(self, image, text, x, y, color=(0, 255, 0), font_size=40):
+    def putText(self, image, text, x, y, color=(0, 255, 0), font_size=22):
         if type(image) == np.ndarray:
             color_coverted = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             image = Image.fromarray(color_coverted)
@@ -331,7 +329,7 @@ class specialDicForOCR:
                         correction_text = f"{message_prefix} {correct}"  # 안내 메시지를 포함한 교정 텍스트
                         # correction_text = f""  # 안내 메시지를 포함한 교정 텍스트
                         # correction_text = f"{message_prefix}Correct: {correct}"  # 안내 메시지를 포함한 교정 텍스트
-                        roi_img = self.draw_bounding_box(roi_img, vertices, box_color, correction_text, text_color, font_size=10)
+                        roi_img = self.draw_bounding_box(roi_img, vertices, box_color, correction_text, text_color, font_size=13)
                         corrected = True
                         break
                 if corrected:
@@ -431,7 +429,7 @@ class specialDicForOCR:
             # 공백이 없다고 판단될 경우 결과 리스트에 해당 바운딩 박스 정보를 추가합니다.
             if not isSpace:
                 results.append(bbox)
-                roi_img = self.draw_bounding_box(roi_img, bbox[1], (0, 165, 255), text='띄어쓰기', text_color=(255, 165, 0), font_size=30)
+                roi_img = self.draw_bounding_box(roi_img, bbox[1], (0, 165, 255), text='띄어쓰기', text_color=(255, 165, 0), font_size=13)
 
         
         # 처리가 완료된 후, 바운딩 박스가 그려진 이미지와 검사 결과 리스트를 반환합니다.
@@ -532,12 +530,10 @@ def execute_OCR(myDic , image_path):
                  [",비타민","E"],[",비타민","B123g"],["(","비타민"],["구리","쳐"],["건강","기능","식품","우동","전도","판매"],["건강","기능","식품","전문","제조","인"],
                  ["D","를"],["줌","[마그네슘"],["필요","[비타민"],["정보","[칼슘"],["D","제품"]]
 
-
-
     texts_rev1 = myDic.combine_boxes_for_specific_words_2(texts) ##special_chars에 ['(',')'] 넣으면 괄호 앞단어 뒷단어가 좌표5이상 띄어져 있을 때 함꼐 bbox쳐짐
     texts_rev2 = myDic.combine_boxes_for_specific_words_1(texts_rev1, ["유통", "기한"]) ##합쳐서 bbox치고 싶은 단어를 list로 받아서 bbox쳐지도록 함수화 시킴 ex)'유통' 다음 다음이 '기한'일 경우 함꼐 bbox쳐짐 
-    # combined_texts = myDic.combine_boxes_for_specific_words_1(texts_rev2, ["프랑스", "산"])
     combined_texts = myDic.combine_boxes_for_specific_words_JG(texts_rev2, sequences)
+    # combined_texts = myDic.combine_boxes_for_specific_words_1(texts_rev2, ["프랑스", "산"])
     roi_img = myDic.correct_and_visualize(roi_img, combined_texts)
 
     border_color = (102, 102, 102)  # Black color in BGR
