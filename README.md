@@ -16,11 +16,12 @@
 - **member 🤠 장유미** : 자라나는 새싹 개발자 입니다. 이미지 segmentation, OCR을 진행 현재는 streamlit 과 Python 함수화 과정 헤메고 있습니다. 경험이라는 영양분으로 계속 성장하고 있습니다!([Work/YmJang](https://github.com/MoonSongAi/PjtCCC/tree/master/Work/YmJang))
 - **member 🤭 최재권** : 이미지 segmentation, OCR, 객체인식을 진행하였습니다.  다양한 분야에서 저의 기술을 발휘할 수 있는 다재다능한 개발자가 되고 싶습니다.([Work/JGChoi](https://github.com/MoonSongAi/PjtCCC/tree/master/Work/JGChoi))
 - **team member 😎 황지의** : 프로젝트 팀에서 OCR 개발자로 활동하며 이미지로부터 텍스트를 추출하고 분석하는 업무를 담당했습니다. 이 경험을 통해 다양한 도메인에 적용 가능한 데이터 처리 솔루션을 제공, 프로젝트의 효율성을 향상시키는 데 기여하고자 하였습니다.([Work/JuHwang](https://github.com/MoonSongAi/PjtCCC/tree/master/Work/JuHwang))
-## 포장 박스 디자인 자동 검토 시스템: AI와 기계학습을 활용한 광고 심의 및 건강 기능 식품 규제 준수 
-### 다음 이미지를 클릭하세요
+## 포장 박스 디자인 자동 검토 시스템
+### AI와 기계학습을 활용한 광고 심의 및 건강 기능 식품 규제 준수 
+#### 다음 이미지를 클릭하세요
 [![ClearCuteChecker](https://img.youtube.com/vi/6UcJPubfU5A/0.jpg)](https://youtu.be/6UcJPubfU5A?si=I3CyJd2lslXIDVXQ)
 ## 2D 도면 이미지를 3D 입체 박스로 렌더링 하는 Preview 
-### 다음 이미지를 클릭하세요
+#### 다음 이미지를 클릭하세요
 [![3D modeling](https://img.youtube.com/vi/IPCwKGRjqHM/0.jpg)](https://youtu.be/IPCwKGRjqHM)
 #### (MoonSongiT의 Youtube로 연결 됩니다. 구독 좋아요 !!!.)
 ![프로젝트 이미지](https://github.com/MoonSongAi/PjtCCC/blob/master/프로젝트표지.png?raw=true)
