@@ -9,6 +9,10 @@
 - 🔭 We're currently working on **CCC team**
 
 - 🌱 We're currently learning **The process of developing AI services using open source and platforms**
+
+![프로젝트 이미지](https://github.com/MoonSongAi/PjtCCC/blob/master/프로젝트표지.png?raw=true)
+![프로젝트 구조도](https://github.com/MoonSongAi/PjtCCC/blob/master/프로젝트구조도.png?raw=true)
+
 - **team leader 😁 김동민** : 개발팀 리더로 역할을 수행 중으로 이미지 전처리, ppt, 회의록을 작성하고 있습니다. 데이터 분석을 활용하는 쪽에 관심 있습니다.([Work/DmKim](https://github.com/MoonSongAi/PjtCCC/tree/master/Work/DmKim))
 - **member 🤪 백혜리** :다양한 API(Google, Naver ,OpenAI..)를 사용하여 OCR과 맞춤법 검사의 성능을 비교하여 구조화된 결과 도출과 데이터 시각화 과정을 거쳤습니다.([Work/HrBaek](https://github.com/MoonSongAi/PjtCCC/tree/master/Work/JHrBaek))
 - **member 😉 윤도하** : OpenCV ,OpenGL ,Object detection, segmentation , LLM 과 LangChain등 많은걸 배웠 습니다. 기업의 정형 , 비정형 데이타를 오픈 플랫폼 AI 서비스로 가공하는 시스템 개발에 관심이 많습니다.([Work/DhYoon](https://github.com/MoonSongAi/PjtCCC/tree/master/Work/DhYoon))
@@ -24,9 +28,6 @@
 #### 다음 이미지를 클릭하세요
 [![3D modeling](https://img.youtube.com/vi/IPCwKGRjqHM/0.jpg)](https://youtu.be/IPCwKGRjqHM)
 #### (MoonSongiT의 Youtube로 연결 됩니다. 구독 좋아요 !!!.)
-![프로젝트 이미지](https://github.com/MoonSongAi/PjtCCC/blob/master/프로젝트표지.png?raw=true)
-![프로젝트 구조도](https://github.com/MoonSongAi/PjtCCC/blob/master/프로젝트구조도.png?raw=true)
-
 - 📫 How to reach me **MoonSongAi@gmail.com**
 
 <h3 align="left">Connect with me:</h3>
