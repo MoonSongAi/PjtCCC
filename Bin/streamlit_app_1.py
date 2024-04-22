@@ -3,15 +3,17 @@ import streamlit as st
 # from streamlit_chat import message
 from langchain_community.callbacks import get_openai_callback
 from langchain.memory import StreamlitChatMessageHistory
+
 from langchain_integration import is_vector_db ,load_langchain,  setup_langchain
 from analysis_image import save_image_to_folder ,load_to_image , \
                         get_image_base64,process_image_with_hsv_range 
-from text_detection_comparison import TextDetectionAndComparison
-from streamlit_cropper import st_cropper
 from OCR_anal import specialDicForOCR , execute_OCR
+
+from text_detection_comparison import TextDetectionAndComparison
+
+from streamlit_cropper import st_cropper
 from PIL import Image
 import numpy as np
-import os
 
 
 # 이미지 삭제 함수
@@ -27,11 +29,12 @@ def delete_image(image_index):
         st.rerun()
 
 def main():
+        
     # Google Cloud 자격 증명 파일의 경로를 사용하여 클래스 초기화
     # detector = TextDetectionAndComparison("C:\\keys\\feisty-audio-420101-460dfe33e2cb.json")
-    
-    # OCR을 위한 사전 준비 작업
+    # detector = TextDetectionAndComparison("C:\\Users\\user\\Desktop\\myccc-420108-7f52a40950c8.json")
     myDic = specialDicForOCR()
+
 
     DB_INDEX = "VECTOR_DB_INDEX"
     st.set_page_config(
@@ -47,7 +50,7 @@ def main():
         #tabs-bui3-tab-0>.st-emotion-cache-l9bjmx p,
         #tabs-bui3-tab-1>.st-emotion-cache-l9bjmx p,
         #tabs-bui3-tab-2>.st-emotion-cache-l9bjmx p{
-        /* 탭 아이템 스타일 변경 */
+            /* 탭 아이템 스타일 변경 */
             font-size:25px
         }
         .element-container iframe{
@@ -56,12 +59,7 @@ def main():
             
         .st-emotion-cache-1kyxreq div{
                 border:3px dashed red
-        }
-                
-        .st-emotion-cache-7ym5gk{
-                width:14rem;
-                height:5rem
-        }
+        } 
         </style>
     """, unsafe_allow_html=True)
     
@@ -213,6 +211,7 @@ def main():
             st.session_state.canvas_image_data = cropped_img
             # _ = cropped_img.thumbnail((300,300))
 
+            # 버튼 배치를 위한 컬럼 생성
             col1, col2  = st.columns(2)
             with col1:
                 # 이미지 회전 버튼
@@ -235,7 +234,7 @@ def main():
                 st.session_state.saved_images.append(st.session_state.canvas_image_data)
                 st.session_state.images_list.append(save_name)
 
-
+ 
             st.write("***_:blue[Preview Cropped Image]_***")
             st.image(st.session_state.canvas_image_data)
             st.session_state.anal_process = True
@@ -263,8 +262,11 @@ def main():
                     if zoom_key not in st.session_state:
                         st.session_state[zoom_key] = False
 
-                # 선택된 이미지 이름으로 실제 이미지 객체를 얻음
-                cols = st.columns(len(st.session_state.images_list))
+                # 이미지 리스트가 존재하며, 길이가 0보다 클 때만 columns를 생성
+                if 'images_list' in st.session_state and len(st.session_state.images_list) > 0:
+                    cols = st.columns(len(st.session_state.images_list))
+                else:
+                    st.warning("이미지 목록이 비어 있거나 존재하지 않습니다. 적절한 처리가 필요합니다.")
                 for idx, img_path in enumerate(st.session_state.images_list):
                     # print(len(st.session_state.process_list)-1,idx)
                     if len(st.session_state.process_list)-1 < idx:  #새로운 이미지가 추가된 경우만
@@ -293,7 +295,7 @@ def main():
                             
                             # 확대 상태에 따라 이미지를 표시하거나 숨깁니다.
                             if st.session_state[zoom_key]:
-                                st.image(st.session_state.process_images[idx], width=700)
+                                st.image(st.session_state.process_images[idx], width=400)
 
                         if  len(st.session_state.anal_image_data) <= idx: 
                             st.session_state.anal_image_data.append(None)  # 이미지 처리 결과 대신 None 추가
@@ -306,6 +308,9 @@ def main():
                         # 결과 이미지를 표시
                         if st.session_state.anal_image_data[idx] is not None:
                             st.image(st.session_state.anal_image_data[idx])
+
+                # st.write("***_:blue[OCR]_***")
+                # Google Cloud 자격 증명 파일의 경로를 사용하여 클래스 초기화
 
     if not openai_api_key:
        openai_api_key = st.secrets["OpenAI_Key"]
@@ -328,12 +333,12 @@ def main():
 
     with tab2:
         # 버튼에 표시될 내용을 리스트로 정의
-        button_labels = ["글자크기와 장평 가이드라인",
-                         "원산지 표시법",
-                         "굵게 표시해야하는 항목은 무엇이 있나요?",
-                         "영양정보 표시할때 주의사항은?",
-                         "원재료 표시 기준",
-                         "정보표시면 표시방법"]
+        button_labels = ["청정지역, 청정해역 임을 증명한는 서류는 ?", 
+                         "기능성원료의 인체적용시험 결과는 어떻게 인용해야 하나요?", 
+                         "타사의 심의자료 열람이 가능한가요?",
+                         "부당한 표시 또는 광고의 내용 이란?", 
+                         "혈당조정 기능성 원료는?", 
+                         "건강기능식품의 기능성 내용과 사례를 알려줘"]
             # 2행 3열 구조로 버튼을 배치하기 위한 인덱스
         if 'last_clicked' not in st.session_state:
             st.session_state['last_clicked'] = ''
