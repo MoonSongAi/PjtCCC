@@ -21,6 +21,7 @@
 ### 다음 이미지를 클릭하세요
 #### (MoonSongiT의 Youtube로 연결 됩니다. 구독 좋아요 !!!.)
 
+[![ClearCuteChecker](https://img.youtube.com/vi/6UcJPubfU5A/0.jpg)](https://youtu.be/6UcJPubfU5A?si=I3CyJd2lslXIDVXQ)
 [![3D modeling](https://img.youtube.com/vi/IPCwKGRjqHM/0.jpg)](https://youtu.be/IPCwKGRjqHM)
 ![프로젝트 이미지](https://github.com/MoonSongAi/PjtCCC/blob/master/프로젝트표지.png?raw=true)
 ![프로젝트 구조도](https://github.com/MoonSongAi/PjtCCC/blob/master/프로젝트구조도.png?raw=true)
