@@ -39,25 +39,49 @@ class ClickableLabel(QLabel):
         self.original_height = original_height
         self.setMouseTracking(True)  # 마우스 추적 활성화
         self.crosshairPosition = None  # 십자선 위치 초기화
+        self.originalPixmap = None  # 원본 QPixmap을 저장할 변수 추가
+    
+    def setOriginalPixmap(self, pixmap):
+        self.originalPixmap = pixmap
+        self.updatePixmap()  # 초기 이미지 설정 시 이미지 업데이트
+
+
+    def resizeEvent(self, event):
+        # 윈도우 크기가 변경될 때 적절한 스케일로 이미지를 다시 조정
+        self.updatePixmap()  # 윈도우 크기 변경 시 이미지 업데이트
+        super().resizeEvent(event)
+    
+    def updatePixmap(self):
+        if self.originalPixmap:
+            # QLabel의 크기에 맞게 QPixmap을 스케일링
+            scaledPixmap = self.originalPixmap.scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            self.setPixmap(scaledPixmap)
 
     def mousePressEvent(self, event):
         # QLabel의 현재 크기에 맞는 스케일 비율을 계산
-        scale_width = self.width() / self.original_width
-        scale_height = self.height() / self.original_height
+        if self.pixmap():
+            pixmap_size = self.pixmap().size()
+            scale_width = pixmap_size.width() / self.original_width
+            scale_height = pixmap_size.height() / self.original_height
 
-        # 클릭 좌표를 원본 QPixmap 상의 좌표로 변환
-        original_x = event.pos().x() / scale_width
-        original_y = event.pos().y() / scale_height
 
-        # 클릭된 마우스 버튼 확인
-        button_clicked = ""
-        if event.button() == Qt.LeftButton:
-            button_clicked = "left"
-        elif event.button() == Qt.RightButton:
-            button_clicked = "right"
+            # scale_width = self.width() / self.original_width
+            # scale_height = self.height() / self.original_height
 
-        # 사용자 정의 시그널을 발생시켜 MainWindow에 클릭 좌표 전달
-        self.clicked.emit(int(original_x)+2, int(original_y)+2 , button_clicked)
+            # 클릭 좌표를 원본 QPixmap 상의 좌표로 변환
+            original_x = event.pos().x() / scale_width
+            original_y = event.pos().y() / scale_height
+
+            # 클릭된 마우스 버튼 확인
+            button_clicked = ""
+            if event.button() == Qt.LeftButton:
+                button_clicked = "left"
+            elif event.button() == Qt.RightButton:
+                button_clicked = "right"
+
+            # 사용자 정의 시그널을 발생시켜 MainWindow에 클릭 좌표 전달
+            self.clicked.emit(int(original_x), int(original_y) , button_clicked)
+            super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
         # QLabel의 현재 크기에 맞는 스케일 비율을 계산
@@ -74,6 +98,7 @@ class ClickableLabel(QLabel):
 
         tooltipText = f"Mouse at: ({int(original_x)}, {int(original_y)})"
         QToolTip.showText(event.globalPos(), tooltipText, self)
+        self.update() # 십자선 업데이트를 위해 화면을 갱신합니다.
 
     def paintEvent(self, event):
         super(ClickableLabel, self).paintEvent(event)

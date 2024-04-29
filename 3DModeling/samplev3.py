@@ -96,6 +96,11 @@ class MainWindow(QMainWindow):
         self.heightInput.textChanged[str].connect(self.glWidget.updateCube)
         self.depthInput.textChanged[str].connect(self.glWidget.updateCube)
     
+    def resizeEvent(self, event):
+        # 크기가 조정될 때 실행할 로직
+        self.update_image_display()
+        super().resizeEvent(event)
+    
 
     def handle_click(self, x, y,button_clicked):
         # 이벤트를 발생시킨 객체를 가져옵니다.
@@ -478,9 +483,9 @@ class MainWindow(QMainWindow):
 
                 non_overlap_box  = self.find_non_overlapping_boxes(averaged_points)
                 self.faceBoxes = non_overlap_box  # class 변수에 저장
-                print(f'non overlapped box count={len(non_overlap_box)}')
-                for box_coord in non_overlap_box:
-                    print(box_coord)
+                # print(f'non overlapped box count={len(non_overlap_box)}')
+                # for box_coord in non_overlap_box:
+                #     print(box_coord)
 
                 pixImg = self.draw_boxes_on_image( qImg,non_overlap_box)
                 # self.save_boxes(image_folder,qImg,non_overlap_box)
@@ -541,6 +546,7 @@ class MainWindow(QMainWindow):
         # 화면 갱신
         self.imgLabel.update()
         self.maskImgLabel.update()
+        print("repaint image")
 
     def toggle_point_in_list(self, x, y):
         circle_radius = 20
@@ -661,24 +667,19 @@ class MainWindow(QMainWindow):
         else:
             self.layout.removeWidget(self.imgLabel)  # 기존 위젯 제거
             self.layout.removeWidget(self.maskImgLabel)
-
-
-        
-        # imgLabel = QLabel()
-        # edgesPixmap을 표시하는 라벨도 ClickableLabel로 만들어 클릭 가능하게 함
+       
         # 원본 이미지의 너비와 높이를 저장
         self.imgLabel = ClickableLabel(qImgWidth, qImgHeight)
         # 클릭 시그널 연결
         self.imgLabel.clicked.connect(self.handle_click)          
 
-        self.imgLabel.setPixmap(pixImg.scaled(newQImgWidth, newQImgHeight, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        self.imgLabel.setOriginalPixmap(pixImg)
         self.layout.addWidget(self.imgLabel)
         
-        #self.maskImgLabel = QLabel()
         self.maskImgLabel = ClickableLabel(edgesWidth, edgesHeight)
         self.maskImgLabel.clicked.connect(self.handle_click)          
 
-        self.maskImgLabel.setPixmap(edgesPixmap.scaled(newMaskQImgWidth, newMaskQImgHeight, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        self.maskImgLabel.setOriginalPixmap(edgesPixmap)
         self.layout.addWidget(self.maskImgLabel)
         
         self.imageWindow.setLayout(self.layout)

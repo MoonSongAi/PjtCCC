@@ -80,11 +80,18 @@ class GLWidget(QGLWidget):
         self.drawCube()
 
     def resizeGL(self, w, h):
-        glViewport(0, 0, w, h)
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        gluPerspective(45, float(w) / h, 0.1, 100.0)
-        glMatrixMode(GL_MODELVIEW)
+        if h == 0:  # 분모가 0이 되는 것을 방지
+            h = 1
+        aspect = w / h  # 새로운 가로/세로 비율 계산
+
+        glViewport(0, 0, w, h)  # 뷰포트를 새 창 크기에 맞게 설정
+        glMatrixMode(GL_PROJECTION)  # 투영 매트릭스 모드로 전환
+        glLoadIdentity()  # 투영 매트릭스를 단위 행렬로 초기화
+
+        # gluPerspective(시야 각도, 종횡비, near 클리핑 평면, far 클리핑 평면)
+        gluPerspective(45, aspect, 0.1, 100.0)  # 종횡비를 새로 계산한 값으로 업데이트
+
+        glMatrixMode(GL_MODELVIEW)  # 다시 모델뷰 매트릭스 모드로 전환
         glLoadIdentity()
 
     def updateCube(self):
