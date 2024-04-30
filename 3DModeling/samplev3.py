@@ -510,6 +510,7 @@ class MainWindow(QMainWindow):
         print(f'non overlapped box count={len(non_overlap_box)}')
 
         pixImg = self.draw_boxes_on_image(self.qImage, non_overlap_box)
+        
         self.update_displayImage(pixImg, text_edges)
 
     def update_displayImage(self,pixImg, text_edges):
@@ -517,8 +518,8 @@ class MainWindow(QMainWindow):
         screenHeight = QApplication.desktop().screenGeometry().height()
 
         # 이미지 크기 조정을 위한 최대 크기 설정
-        maxDisplayWidth = screenWidth * 0.8  # 화면 너비의 100%
-        maxDisplayHeight = screenHeight * 0.8  # 화면 높이의 100%
+        maxDisplayWidth = screenWidth * 1.0  # 화면 너비의 100%
+        maxDisplayHeight = screenHeight * 1.0  # 화면 높이의 100%
         
         # 원본 이미지와 마스크 이미지의 조정된 크기 계산
         qImgWidth = pixImg.width()
@@ -533,11 +534,13 @@ class MainWindow(QMainWindow):
 
         # 최대 표시 크기에 맞춰 이미지 크기 조정
         ratio = min(maxDisplayWidth / (qImgWidth + edgesWidth), maxDisplayHeight / max(qImgHeight, edgesHeight))
+        print(f'update_displayImage {ratio} = min({maxDisplayWidth} / ({qImgWidth} + {edgesWidth}), {maxDisplayHeight} / max({qImgHeight}, {edgesHeight}))')
+
         newQImgWidth = int(qImgWidth * ratio)
         newQImgHeight = int(qImgHeight * ratio)
         newMaskQImgWidth = int(edgesWidth * ratio)
         newMaskQImgHeight = int(edgesHeight * ratio)
-        
+        print('update_display',newQImgWidth, newQImgHeight, newMaskQImgWidth, newMaskQImgHeight)        
 
         # QLabel에 새로운 QPixmap 설정
         self.imgLabel.setPixmap(pixImg.scaled(newQImgWidth, newQImgHeight, Qt.KeepAspectRatio, Qt.SmoothTransformation))
@@ -638,8 +641,8 @@ class MainWindow(QMainWindow):
         screenHeight = QApplication.desktop().screenGeometry().height()
 
         # 이미지 크기 조정을 위한 최대 크기 설정
-        maxDisplayWidth = screenWidth * 0.8  # 화면 너비의 80%
-        maxDisplayHeight = screenHeight * 0.8  # 화면 높이의 80%
+        maxDisplayWidth = screenWidth * 1.0  # 화면 너비의 80%
+        maxDisplayHeight = screenHeight * 1.0  # 화면 높이의 80%
         
         # 원본 이미지와 마스크 이미지의 조정된 크기 계산
         qImgWidth = pixImg.width()
@@ -654,15 +657,19 @@ class MainWindow(QMainWindow):
 
         # 최대 표시 크기에 맞춰 이미지 크기 조정
         ratio = min(maxDisplayWidth / (qImgWidth + edgesWidth), maxDisplayHeight / max(qImgHeight, edgesHeight))
+        print(f'displayImage {ratio} = min({maxDisplayWidth} / ({qImgWidth} + {edgesWidth}), {maxDisplayHeight} / max({qImgHeight}, {edgesHeight}))')
         newQImgWidth = int(qImgWidth * ratio)
         newQImgHeight = int(qImgHeight * ratio)
         newMaskQImgWidth = int(edgesWidth * ratio)
         newMaskQImgHeight = int(edgesHeight * ratio)
-        
+        print('display',newQImgWidth, newQImgHeight, newMaskQImgWidth, newMaskQImgHeight)        
+
         # imageWindow가 이미 존재하는지 확인
         if self.imageWindow is None:
             self.imageWindow = QWidget()
             self.imageWindow.setWindowTitle('Image and Mask Preview')
+            self.imageWindow.setFixedSize(1000, 500)                 # imageWindow의 크기를 고정합니다.
+
             self.layout = QHBoxLayout(self.imageWindow)
         else:
             self.layout.removeWidget(self.imgLabel)  # 기존 위젯 제거
