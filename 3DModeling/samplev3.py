@@ -514,16 +514,6 @@ class MainWindow(QMainWindow):
         self.update_displayImage(pixImg, text_edges)
 
     def update_displayImage(self,pixImg, text_edges):
-        screenWidth = QApplication.desktop().screenGeometry().width()
-        screenHeight = QApplication.desktop().screenGeometry().height()
-
-        # 이미지 크기 조정을 위한 최대 크기 설정
-        maxDisplayWidth = screenWidth * 1.0  # 화면 너비의 100%
-        maxDisplayHeight = screenHeight * 1.0  # 화면 높이의 100%
-        
-        # 원본 이미지와 마스크 이미지의 조정된 크기 계산
-        qImgWidth = pixImg.width()
-        qImgHeight = pixImg.height()
 
         # NumPy 배열의 너비와 높이를 얻습니다.
         edgesHeight, edgesWidth = text_edges.shape
@@ -532,24 +522,12 @@ class MainWindow(QMainWindow):
         # QImage로 변환된 edgesQImg를 QPixmap으로 변환
         edgesPixmap = QPixmap.fromImage(edgesQImg)
 
-        # 최대 표시 크기에 맞춰 이미지 크기 조정
-        ratio = min(maxDisplayWidth / (qImgWidth + edgesWidth), maxDisplayHeight / max(qImgHeight, edgesHeight))
-        print(f'update_displayImage {ratio} = min({maxDisplayWidth} / ({qImgWidth} + {edgesWidth}), {maxDisplayHeight} / max({qImgHeight}, {edgesHeight}))')
-
-        newQImgWidth = int(qImgWidth * ratio)
-        newQImgHeight = int(qImgHeight * ratio)
-        newMaskQImgWidth = int(edgesWidth * ratio)
-        newMaskQImgHeight = int(edgesHeight * ratio)
-        print('update_display',newQImgWidth, newQImgHeight, newMaskQImgWidth, newMaskQImgHeight)        
-
-        # QLabel에 새로운 QPixmap 설정
-        self.imgLabel.setPixmap(pixImg.scaled(newQImgWidth, newQImgHeight, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-        self.maskImgLabel.setPixmap(edgesPixmap.scaled(newMaskQImgWidth, newMaskQImgHeight, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-
+        # # QLabel에 새로운 QPixmap 설정
+        self.imgLabel.setPixmap(pixImg.scaled(self.imgLabel.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        self.maskImgLabel.setPixmap(edgesPixmap.scaled(self.maskImgLabel.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
         # 화면 갱신
         self.imgLabel.update()
         self.maskImgLabel.update()
-        print("repaint image")
 
     def toggle_point_in_list(self, x, y):
         circle_radius = 20
@@ -613,6 +591,7 @@ class MainWindow(QMainWindow):
             if topLeftX <= globalX <= bottomRightX and topLeftY <= globalY <= bottomRightY:
                 return box  # 해당 박스 반환
         return None  # 좌표가 어떤 박스에도 속하지 않는 경우
+            
     
     def save_face_box_as_image(self, box, faceName):
         # 박스 좌표 추출

@@ -55,6 +55,7 @@ class ClickableLabel(QLabel):
             # QLabel의 크기에 맞게 QPixmap을 스케일링
             scaledPixmap = self.originalPixmap.scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
             self.setPixmap(scaledPixmap)
+            print("updatePixmap##",self.size())
 
     def mousePressEvent(self, event):
         # QLabel의 현재 크기에 맞는 스케일 비율을 계산
