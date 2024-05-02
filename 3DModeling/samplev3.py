@@ -668,7 +668,7 @@ class MainWindow(QMainWindow):
         if self.imageWindow is None:
             self.imageWindow = QWidget()
             self.imageWindow.setWindowTitle('Image and Mask Preview')
-            self.imageWindow.setFixedSize(1000, 500)                 # imageWindow의 크기를 고정합니다.
+            self.imageWindow.setFixedSize(newQImgWidth + newMaskQImgWidth, max(newQImgHeight, newMaskQImgHeight))      # imageWindow의 크기를 고정합니다.
 
             self.layout = QHBoxLayout(self.imageWindow)
         else:

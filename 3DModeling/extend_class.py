@@ -45,11 +45,10 @@ class ClickableLabel(QLabel):
         self.originalPixmap = pixmap
         self.updatePixmap()  # 초기 이미지 설정 시 이미지 업데이트
 
-
     def resizeEvent(self, event):
         # 윈도우 크기가 변경될 때 적절한 스케일로 이미지를 다시 조정
-        self.updatePixmap()  # 윈도우 크기 변경 시 이미지 업데이트
-        super().resizeEvent(event)
+       self.updatePixmap()  # 윈도우 크기 변경 시 이미지 업데이트
+       super().resizeEvent(event)
     
     def updatePixmap(self):
         if self.originalPixmap:
@@ -61,6 +60,7 @@ class ClickableLabel(QLabel):
         # QLabel의 현재 크기에 맞는 스케일 비율을 계산
         if self.pixmap():
             pixmap_size = self.pixmap().size()
+            
             scale_width = pixmap_size.width() / self.original_width
             scale_height = pixmap_size.height() / self.original_height
 
@@ -71,6 +71,9 @@ class ClickableLabel(QLabel):
             # 클릭 좌표를 원본 QPixmap 상의 좌표로 변환
             original_x = event.pos().x() / scale_width
             original_y = event.pos().y() / scale_height
+
+            # original_x = round(event.pos().x() / scale_width, 2)
+            # original_y = round(event.pos().y() / scale_height, 2)
 
             # 클릭된 마우스 버튼 확인
             button_clicked = ""
