@@ -33,13 +33,14 @@ class PopupLabel(QLabel):
 class ClickableLabel(QLabel): 
     clicked = pyqtSignal(int , int , str)  # 사용자 정의 시그널, 클릭된 좌표와 클릭된 버튼("left" 또는 "right")을 전달합니다.
 
-    def __init__(self, original_width, original_height, *args, **kwargs):
+    def __init__(self, mainWindow, original_width, original_height, *args, **kwargs):
         super(ClickableLabel, self).__init__(*args, **kwargs)
+        self.mainWindow = mainWindow   # MainWindow의 인스턴스를 저장
         self.original_width = original_width
         self.original_height = original_height
-        self.setMouseTracking(True)  # 마우스 추적 활성화
+        self.setMouseTracking(True)    # 마우스 추적 활성화
         self.crosshairPosition = None  # 십자선 위치 초기화
-        self.originalPixmap = None  # 원본 QPixmap을 저장할 변수 추가
+        self.originalPixmap = None     # 원본 QPixmap을 저장할 변수 추가
     
     def setOriginalPixmap(self, pixmap):
         self.originalPixmap = pixmap
@@ -55,7 +56,7 @@ class ClickableLabel(QLabel):
             # QLabel의 크기에 맞게 QPixmap을 스케일링
             scaledPixmap = self.originalPixmap.scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
             self.setPixmap(scaledPixmap)
-            print("updatePixmap##",self.size())
+            # print("updatePixmap##",self.size())
 
     def mousePressEvent(self, event):
         # QLabel의 현재 크기에 맞는 스케일 비율을 계산
@@ -65,16 +66,9 @@ class ClickableLabel(QLabel):
             scale_width = pixmap_size.width() / self.original_width
             scale_height = pixmap_size.height() / self.original_height
 
-
-            # scale_width = self.width() / self.original_width
-            # scale_height = self.height() / self.original_height
-
             # 클릭 좌표를 원본 QPixmap 상의 좌표로 변환
             original_x = event.pos().x() / scale_width
             original_y = event.pos().y() / scale_height
-
-            # original_x = round(event.pos().x() / scale_width, 2)
-            # original_y = round(event.pos().y() / scale_height, 2)
 
             # 클릭된 마우스 버튼 확인
             button_clicked = ""
@@ -107,18 +101,38 @@ class ClickableLabel(QLabel):
     def paintEvent(self, event):
         super(ClickableLabel, self).paintEvent(event)
         if self.crosshairPosition:
-            painter = QPainter(self)
-            pen = QPen(QColor(255, 0, 0), 2, Qt.DotLine)  # 검은색, 점선 스타일
-            painter.setPen(pen)
+            # 결과에 따라 색상 설정
+            painter = QPainter(self)   # 하나의 QPainter 객체만 사용 가능 합니다.
+            # 원본 크기의 좌표를 사용하여 범위 체크
+            result = self.mainWindow.is_within_range(self.crosshairPosition.x(), self.crosshairPosition.y())
             # 스케일 비율 계산
             scale_width = self.width() / self.original_width
             scale_height = self.height() / self.original_height
              # 스케일링된 십자선 위치 계산
             x = int(self.crosshairPosition.x() * scale_width)
             y = int(self.crosshairPosition.y() * scale_height)
-            # 십자선 그리기
-            painter.drawLine(0, y, self.width(), y)  # 가로선
-            painter.drawLine(x, 0, x, self.height())  # 세로선
+
+            if result == 3:
+                print("result 3",self.crosshairPosition.x(),self.crosshairPosition.y())
+
+            if result in [1, 3]:  # x 좌표가 범위 내에 있거나 둘 다 범위 내에 있을 때
+                pen_color_x = QColor(255, 255, 0)  # 노란
+            else:
+                pen_color_x = QColor(255, 0, 0)  # 빨간색
+ 
+            penX = QPen(pen_color_x, 2, Qt.DotLine)
+            painter.setPen(penX)
+            painter.drawLine(x, 0, x, self.height())
+            
+            # y축 십자선의 색상 설정
+            if result in [2, 3]:  # y 좌표가 범위 내에 있거나 둘 다 범위 내에 있을 때
+                pen_color_y = QColor(255, 255, 0)  # 노란
+            else:
+                pen_color_y = QColor(255, 0, 0)  # 빨간색
+                # 십자선 그리기
+            penY = QPen(pen_color_y, 2, Qt.DotLine)
+            painter.setPen(penY)
+            painter.drawLine(0, y, self.width(),y)
 
 class BoxCalculator:
     def __init__(self, boxes):

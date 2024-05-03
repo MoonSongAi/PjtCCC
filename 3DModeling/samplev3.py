@@ -118,17 +118,6 @@ class MainWindow(QMainWindow):
             print("Clicked on an unidentified label")
 
 
-        # 클릭된 좌표와 마우스 버튼 정보 처리
-        # if button_clicked == "left":
-        #     self.toggle_point_in_list(x, y)
-        #     self.update_image_display()
-        # elif button_clicked == "right":
-        #     print(f"Right button clicked at: ({x}, {y})")
-        #     self.show_click_count(x, y)
-        # else:
-        #     print(f"Clicked at: ({x}, {y}) without recognized button")
-
-
     def openMultipleImagesFileDialog(self):
         imagePaths, _ = QFileDialog.getOpenFileNames(
             self, "Select Images", "", "Image Files (*.png *.jpg *.jpeg *.bmp *.gif)"
@@ -432,6 +421,16 @@ class MainWindow(QMainWindow):
             text_position = (int(x) - 40, int(y) - 25)
             cv2.putText(cp_edges, text, text_position, font, font_scale, font_color, font_thickness)
         return cp_edges
+    
+    def is_within_range(self, x, y, tolerance=5):
+        for px, py in self.interSections:
+            if (abs(px - x) <= tolerance) and (abs(py - y) <= tolerance):
+                return 3  # x와 y 모두 범위 내
+            elif abs(px - x) <= tolerance:
+                return 1  # x만 범위 내
+            elif abs(py - y) <= tolerance:
+                return 2  # y만 범위 내
+        return 0  # 범위 밖
 
     def loadImage(self):
         filePath, _ = QFileDialog.getOpenFileName(self, "Select Image", "", "Image Files (*.png *.jpg *.jpeg *.bmp *.gif)")
@@ -525,6 +524,9 @@ class MainWindow(QMainWindow):
         # # QLabel에 새로운 QPixmap 설정
         self.imgLabel.setPixmap(pixImg.scaled(self.imgLabel.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
         self.maskImgLabel.setPixmap(edgesPixmap.scaled(self.maskImgLabel.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        # 저장된 원본도 바꾼다
+        self.imgLabel.setOriginalPixmap(pixImg)
+        self.maskImgLabel.setOriginalPixmap(edgesPixmap)
         # 화면 갱신
         self.imgLabel.update()
         self.maskImgLabel.update()
@@ -572,7 +574,8 @@ class MainWindow(QMainWindow):
         find_box = self.find_box_containing_point(self.faceBoxes, X, Y)
         if find_box is not None:
             saved_image_path = self.save_face_box_as_image(find_box,faceName)
-            self.glWidget.updateTexture(saved_image_path, faceIndex) 
+            # self.glWidget.updateTexture(saved_image_path, faceIndex) 
+            self.loadBoxFace()
         else:
             print('Not found')
 
@@ -611,7 +614,6 @@ class MainWindow(QMainWindow):
         
         # 이미지 저장
         cropped_qimage.save(save_path, 'JPG')
-        print(f'Saved {faceName} as {save_path}')
 
         return save_path  # 저장된 이미지의 경로를 반환합니다.
 
@@ -636,18 +638,16 @@ class MainWindow(QMainWindow):
 
         # 최대 표시 크기에 맞춰 이미지 크기 조정
         ratio = min(maxDisplayWidth / (qImgWidth + edgesWidth), maxDisplayHeight / max(qImgHeight, edgesHeight))
-        print(f'displayImage {ratio} = min({maxDisplayWidth} / ({qImgWidth} + {edgesWidth}), {maxDisplayHeight} / max({qImgHeight}, {edgesHeight}))')
         newQImgWidth = int(qImgWidth * ratio)
         newQImgHeight = int(qImgHeight * ratio)
         newMaskQImgWidth = int(edgesWidth * ratio)
         newMaskQImgHeight = int(edgesHeight * ratio)
-        print('display',newQImgWidth, newQImgHeight, newMaskQImgWidth, newMaskQImgHeight)        
 
         # imageWindow가 이미 존재하는지 확인
         if self.imageWindow is None:
             self.imageWindow = QWidget()
             self.imageWindow.setWindowTitle('Image and Mask Preview')
-            self.imageWindow.setFixedSize(newQImgWidth + newMaskQImgWidth, max(newQImgHeight, newMaskQImgHeight))      # imageWindow의 크기를 고정합니다.
+            # self.imageWindow.setFixedSize(newQImgWidth + newMaskQImgWidth, max(newQImgHeight, newMaskQImgHeight))      # imageWindow의 크기를 고정합니다.
 
             self.layout = QHBoxLayout(self.imageWindow)
         else:
@@ -655,14 +655,14 @@ class MainWindow(QMainWindow):
             self.layout.removeWidget(self.maskImgLabel)
        
         # 원본 이미지의 너비와 높이를 저장
-        self.imgLabel = ClickableLabel(qImgWidth, qImgHeight)
+        self.imgLabel = ClickableLabel(self, qImgWidth, qImgHeight)
         # 클릭 시그널 연결
         self.imgLabel.clicked.connect(self.handle_click)          
 
         self.imgLabel.setOriginalPixmap(pixImg)
         self.layout.addWidget(self.imgLabel)
         
-        self.maskImgLabel = ClickableLabel(edgesWidth, edgesHeight)
+        self.maskImgLabel = ClickableLabel(self, edgesWidth, edgesHeight)
         self.maskImgLabel.clicked.connect(self.handle_click)          
 
         self.maskImgLabel.setOriginalPixmap(edgesPixmap)
