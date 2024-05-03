@@ -5,6 +5,7 @@ import os
 import sys
 import cv2
 import numpy as np
+from sklearn.cluster import KMeans  # add by yoon 5/3 16:40
 
 from OpenGL.GL import *
 from OpenGL.GLU import *
@@ -351,6 +352,21 @@ class MainWindow(QMainWindow):
             # QPixmap을 이미지 파일로 저장
             filename = os.path.join(save_path, f'cropped_box_{index}.jpg')
             cropped_pixmap.save(filename, 'JPG')
+    ############################### add by yoon 5/3 17:40
+    # 도미넌트 색상 찾기
+    def find_dominant_color(self,hsv_image, k=4):
+        data = hsv_image.reshape((-1, 3))
+        kmeans = KMeans(n_clusters=k, random_state=0).fit(data)
+        dominant_color = kmeans.cluster_centers_[np.argmax(np.bincount(kmeans.labels_))]
+        return dominant_color.astype(int)
+
+    # HSV 범위 설정
+    def get_hsv_range(self, dominant_hsv, range_width=10):
+        lower_hsv = np.maximum(dominant_hsv - range_width, [0, 50, 50])
+        upper_hsv = np.minimum(dominant_hsv + range_width, [180, 255, 255])
+        return lower_hsv, upper_hsv
+    ############################### add by yoon 5/3 17:40
+
 
     def detect_edges_in_hsv_range(self, img_color, lower_hsv, upper_hsv, \
                                   canny_threshold1=50, canny_threshold2=150, \
@@ -461,6 +477,10 @@ class MainWindow(QMainWindow):
                     # 연녹색 HSV 범위 정의 bbb.jpg
                     lower_hsv = (79, 215, 18)
                     upper_hsv = (99, 255, 118)
+
+                # dominant_hsv = self.find_dominant_color(img_color_rgb)
+                # lower_hsv, upper_hsv = self.get_hsv_range(dominant_hsv)
+                # print(f"Image: {filePath} - Dominant HSV: {dominant_hsv}, Lower HSV: {lower_hsv}, Upper HSV: {upper_hsv}")
 
                 msk_edges = self.detect_edges_in_hsv_range(img_color, lower_hsv, upper_hsv, 
                                                        canny_threshold1, canny_threshold2, 
