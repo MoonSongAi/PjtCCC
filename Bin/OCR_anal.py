@@ -43,23 +43,31 @@ class specialDicForOCR:
         return characters
 
     def init_load_font(self,size=20):
-        font_path = 'D:/PjtCCC/Bin/SUIT-ttf/SUIT-Light.ttf'   # 사용할 폰트 파일의 경로
+        # font_path = 'D:/PjtCCC/Bin/SUIT-ttf/SUIT-Light.ttf'   # 사용할 폰트 파일의 경로
+        font_path = 'C:/PjtCCC/Bin/SUIT-ttf/SUIT-Light.ttf'   # 사용할 폰트 파일의 경로
         font_size = size  # 폰트 크기 설정
         self.font = ImageFont.truetype(font_path, font_size)
 
 
     def load_special_dic(self):
         # 예제 사용법 (이 부분은 실제 코드에 맞게 조정 필요)
-        self.correction_dict_1 = self.load_terms('D:/PjtCCC/Bin/SpecialDic/맞춤법용어집_주의어.csv')
-        self.correction_dict_2 = self.load_terms('D:/PjtCCC/Bin/SpecialDic/맞춤법용어집_붙여쓰기.csv')
-        # self.correction_dict_3 = self.load_terms('D:/PjtCCC/Bin/SpecialDic/맞춤법용어집_띄어쓰기_보류.csv')
-        self.correction_dict_3 = self.load_terms('D:/PjtCCC/Bin/SpecialDic/맞춤법용어집_볼드체.csv')
-        self.special_chars_2 = self.load_special_characters('D:/PjtCCC/Bin/SpecialDic/맞춤법용어집_붙여쓰기_특정문자.csv')
-        # self.special_chars_3 = self.load_special_characters('D:/PjtCCC/Bin/SpecialDic/맞춤법용어집_띄어쓰기_특정문자.csv')
+        # self.correction_dict_1 = self.load_terms('D:/PjtCCC/Bin/SpecialDic/맞춤법용어집_주의어.csv')
+        # self.correction_dict_2 = self.load_terms('D:/PjtCCC/Bin/SpecialDic/맞춤법용어집_붙여쓰기.csv')
+        # # self.correction_dict_3 = self.load_terms('D:/PjtCCC/Bin/SpecialDic/맞춤법용어집_띄어쓰기_보류.csv')
+        # self.correction_dict_3 = self.load_terms('D:/PjtCCC/Bin/SpecialDic/맞춤법용어집_볼드체.csv')
+        # self.special_chars_2 = self.load_special_characters('D:/PjtCCC/Bin/SpecialDic/맞춤법용어집_붙여쓰기_특정문자.csv')
+        # # self.special_chars_3 = self.load_special_characters('D:/PjtCCC/Bin/SpecialDic/맞춤법용어집_띄어쓰기_특정문자.csv')
+        self.correction_dict_1 = self.load_terms('C:/PjtCCC/Bin/SpecialDic/맞춤법용어집_주의어.csv')
+        self.correction_dict_2 = self.load_terms('C:/PjtCCC/Bin/SpecialDic/맞춤법용어집_붙여쓰기.csv')
+        # self.correction_dict_3 = self.load_terms('C:/PjtCCC/Bin/SpecialDic/맞춤법용어집_띄어쓰기_보류.csv')
+        self.correction_dict_3 = self.load_terms('C:/PjtCCC/Bin/SpecialDic/맞춤법용어집_볼드체.csv')
+        self.special_chars_2 = self.load_special_characters('C:/PjtCCC/Bin/SpecialDic/맞춤법용어집_붙여쓰기_특정문자.csv')
+        # self.special_chars_3 = self.load_special_characters('C:/PjtCCC/Bin/SpecialDic/맞춤법용어집_띄어쓰기_특정문자.csv')
 
     def init_google_vision(self):
         """이미지 파일에서 텍스트를 감지합니다."""
-        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'D:\\Solusseum\\Users\\User\\Desktop\\Desktop\\myccc-420108-70386cde5053.json' #json으로 발급받은 API키 입력 
+        # os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'D:\\Solusseum\\Users\\User\\Desktop\\Desktop\\myccc-420108-70386cde5053.json' #json으로 발급받은 API키 입력 
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'C:/Users/owner/OneDrive/바탕 화면/myccc-420108-70386cde5053.json' #json으로 발급받은 API키 입력 
         client_options = {'api_endpoint': 'eu-vision.googleapis.com'} #Google Cloud Vision API의 엔드포인트를 설정
         self.client = vision.ImageAnnotatorClient(client_options=client_options)#Google Cloud Vision API의 ImageAnnotatorClient 인스턴스를 생성합니다. 
 
