@@ -353,6 +353,61 @@ class MainWindow(QMainWindow):
             filename = os.path.join(save_path, f'cropped_box_{index}.jpg')
             cropped_pixmap.save(filename, 'JPG')
     ############################### add by yoon 5/3 17:40
+    def resize_image_for_display(self, image, max_display_size=800):
+        # 이미지의 최대 크기를 조정
+        height, width = image.shape[:2]
+        scaling_factor = max_display_size / float(max(height, width))
+        
+        # 너무 크지 않다면 원본 유지
+        if scaling_factor < 1:
+            image = cv2.resize(image, None, fx=scaling_factor, fy=scaling_factor, interpolation=cv2.INTER_AREA)
+        return image
+    def select_roi(self, image_path):
+        # 이미지 로드
+        image = cv2.imread(image_path)
+        # 화면 크기에 맞게 이미지 크기 조정
+        resized_image = self.resize_image_for_display(image)        
+        # ROI 선택을 위한 마우스 콜백 함수
+        roi = cv2.selectROI("Select ROI", resized_image)
+        cv2.destroyAllWindows()
+        
+        # 원본 이미지 크기에 맞게 ROI 좌표 조정
+        scaling_factor = image.shape[1] / float(resized_image.shape[1])
+        roi = tuple([int(x * scaling_factor) for x in roi])
+        
+        # 원본 이미지에서 선택된 ROI의 HSV 값 추출
+        hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        roi_hsv = hsv_image[int(roi[1]):int(roi[1]+roi[3]), int(roi[0]):int(roi[0]+roi[2])]
+        average_hsv = cv2.mean(roi_hsv)[:3]
+        return average_hsv
+
+    def define_hsv_range(self, hsv_value, range_width=10):
+        lower_hsv = np.array([max(0, hsv_value[0] - range_width), max(0, hsv_value[1] - range_width), max(0, hsv_value[2] - range_width)])
+        upper_hsv = np.array([min(179, hsv_value[0] + range_width), min(255, hsv_value[1] + range_width), min(255, hsv_value[2] + range_width)])
+        return lower_hsv, upper_hsv
+    
+    def detect_lines_and_colors(self, image_path):
+        # 이미지 로드 및 그레이스케일 변환
+        image = cv2.imread(image_path)
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        # Canny 엣지 검출
+        edges = cv2.Canny(gray, 50, 150, apertureSize=3)
+        
+        # Hough 변환을 통한 선 검출
+        lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=100, minLineLength=100, maxLineGap=10)
+        
+        # 선의 방향 분석 및 색상 추출
+        if lines is not None:
+            for line in lines:
+                x1, y1, x2, y2 = line[0]
+                # 수평 또는 수직 선 감지
+                if x1 == x2 or y1 == y2:  # 수직 선은 x1 == x2, 수평 선은 y1 == y2
+                    # 선의 중간 지점 색상 추출
+                    hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+                    mid_point_color = hsv_image[(y1+y2)//2, (x1+x2)//2]
+                    return mid_point_color
+
     # 도미넌트 색상 찾기
     def find_dominant_color(self,hsv_image, k=4):
         data = hsv_image.reshape((-1, 3))
@@ -366,8 +421,41 @@ class MainWindow(QMainWindow):
         upper_hsv = np.minimum(dominant_hsv + range_width, [180, 255, 255])
         return lower_hsv, upper_hsv
     ############################### add by yoon 5/3 17:40
+    def analyze_lines_and_colors(self,image_path):
+        # 이미지 로드 및 그레이스케일로 변환
+        image = cv2.imread(image_path)
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        # Canny 엣지 검출
+        edges = cv2.Canny(gray, 50, 150, apertureSize=3)
+        
+        # Hough 변환을 통한 선 검출
+        lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=100, minLineLength=200, maxLineGap=10)
+        
+        hsv_values = []
+        if lines is not None:
+            for line in lines:
+                x1, y1, x2, y2 = line[0]
+                # 선의 길이 계산
+                line_length = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+                
+                # 길이가 200 이상인 선만 처리
+                if line_length >= 200:
+                    angle = np.arctan2(y2 - y1, x2 - x1) * 180.0 / np.pi
+                    # 수평 및 수직 선 필터링 (±5도)
+                    if (abs(angle) <= 5 or abs(angle) >= 175) or (abs(angle - 90) <= 5 or abs(angle - 270) <= 5):
+                        # 선의 색상 추출
+                        color = image[y1, x1]
+                        hsv_color = cv2.cvtColor(np.uint8([[color]]), cv2.COLOR_BGR2HSV)[0][0]
+                        hsv_values.append(hsv_color)
+                        print(f"Line: ({x1}, {y1}) to ({x2}, {y2}), Angle: {angle:.2f}, Length: {line_length}, HSV: {hsv_color}")
 
-
+        # HSV 값들의 평균 계산
+        if hsv_values:
+            average_hsv = np.mean(hsv_values, axis=0).astype(int)
+            print(f"Average HSV: {average_hsv}")    
+        
+        
     def detect_edges_in_hsv_range(self, img_color, lower_hsv, upper_hsv, \
                                   canny_threshold1=50, canny_threshold2=150, \
                                   hough_threshold=110, min_line_length=80, max_line_gap=150):
@@ -450,6 +538,23 @@ class MainWindow(QMainWindow):
 
     def loadImage(self):
         filePath, _ = QFileDialog.getOpenFileName(self, "Select Image", "", "Image Files (*.png *.jpg *.jpeg *.bmp *.gif)")
+        
+        self.analyze_lines_and_colors(filePath)
+
+        # line_color = self.detect_lines_and_colors(filePath)
+
+        # if line_color is not None:
+        #     print(f"Detected line color (HSV): {line_color}")
+        # else:
+        #     print("No horizontal or vertical lines detected.")
+
+        # average_hsv = self.select_roi(filePath)
+        # lower_hsv, upper_hsv = self.define_hsv_range(average_hsv)
+
+        # print("Average HSV:", average_hsv)
+        # print("Lower HSV Threshold:", lower_hsv)
+        # print("Upper HSV Threshold:", upper_hsv)
+
         if filePath:
             img_color = cv2.imread(filePath)
             if img_color is not None:
@@ -477,6 +582,7 @@ class MainWindow(QMainWindow):
                     # 연녹색 HSV 범위 정의 bbb.jpg
                     lower_hsv = (79, 215, 18)
                     upper_hsv = (99, 255, 118)
+                
 
                 # dominant_hsv = self.find_dominant_color(img_color_rgb)
                 # lower_hsv, upper_hsv = self.get_hsv_range(dominant_hsv)
