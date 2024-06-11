@@ -39,7 +39,8 @@ def main():
         page_icon=":volcano:")
 
 
-    st.title("_표시 디자인 오류 탐색기..._ :red[QA Chat]_ :volcano:")
+    # st.title(":volcano:_표시 디자인 오류 탐색기.....")
+    st.header(":volcano:표시 디자인 오류 탐색기....:red[Q/A Chatting]")
     # 여기에 CSS 스타일을 추가
     st.markdown("""
         <style>
